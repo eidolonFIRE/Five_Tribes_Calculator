@@ -73,39 +73,15 @@ import random
 
 class Tile:
 	availableTiles_counter = 1
-	availableTiles = [
-
-	('blue', 5 , 'village'),
-	('blue', 5 , 'village'),
-	('blue', 5 , 'village'),
-	('blue', 5 , 'village'),
-	('blue', 5 , 'village'),
-	('blue', 6 , 'djinn'),
-	('blue', 6 , 'djinn'),
-	('blue', 6 , 'djinn'),
-	('blue', 6 , 'djinn'),
-	('blue', 10, 'djinn'),
-	('blue', 12, 'djinn'),
-	('blue', 15, 'djinn'),
-
-	('red', 4, 'l_market'),
-	('red', 4, 'l_market'),
-	('red', 4, 'l_market'),
-	('red', 4, 'l_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 6, 's_market'),
-	('red', 8, 'palm'),
-	('red', 8, 'palm'),
-	('red', 8, 'palm'),
-	('red', 8, 'palm'),
-	('red', 8, 'palm'),
-	('red', 8, 'palm'),	]
+	availableTiles = \
+	[('blue', 5 , 'village')] * 5 + \
+	[('blue', 6 , 'djinn')  ] * 4 + \
+	[('blue', 10, 'djinn'),
+	 ('blue', 12, 'djinn'),
+	 ('blue', 15, 'djinn')  ] + \
+	[('red', 4, 'l_market') ] * 4 + \
+	[('red', 6, 's_market') ] * 8 + \
+	[('red', 8, 'palm')     ] * 6
 
 
 	meepleColor = [
@@ -182,6 +158,35 @@ class Board:
 
 #==============================================================================
 
+def getResolvableTiles(radius = 0):
+	retval = []
+	xy_pairs = []
+	if radius > 3 and radius % 2 == 0:
+		xy_pairs = xy_pairs + [(0,0)]
+	for rad in range(1, radius, 2):
+		for itter in range(-rad, rad):
+			xy_pairs = xy_pairs + [(itter, itter - abs(itter) )]  # /\
+			if itter != -rad and itter != rad:
+				xy_pairs = xy_pairs + [(itter, abs(itter) - itter )]  # /\
+
+	return xy_pairs
+
+
+
+
+def resolveTile(tile):
+	return
+
+
+
+
+
+
+
+
+#==============================================================================
+
+
 pygame.init()
 
 myBoard = Board()
@@ -190,6 +195,8 @@ gameDisplay = pygame.display.set_mode((1280,720))
 pygame.display.set_caption('Five Tribes Calculator')
 
 gameExit = False
+
+print getResolvableTiles(1)
 
 
 while not gameExit:
