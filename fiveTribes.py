@@ -41,9 +41,9 @@ import random
 #    - - - - 1 - 1 - - - -
 #    - - - 1 - 1 - 1 - - -
 #    - - 1 - 1 - 1 - 1 - -
-#    - 1 - 1 - 1 - 1 - 1 -
-#    1 - 1 - 1 X 1 - 1 - 1
-#    - 1 - 1 - 1 - 1 - 1 -
+#    - 1 - 1 - 2 - 1 - 1 -
+#    1 - 1 - 2 X 2 - 1 - 1
+#    - 1 - 1 - 2 - 1 - 1 -
 #    - - 1 - 1 - 1 - 1 - -
 #    - - - 1 - 1 - 1 - - -
 #    - - - - 1 - 1 - - - -
@@ -54,16 +54,15 @@ import random
 #    - - - - - 1 - 1 - - - - -
 #    - - - - 1 - 1 - 1 - - - -
 #    - - - 1 - 1 - 1 - 1 - - -
-#    - - 1 - 1 - 1 - 1 - 1 - -
-#    - 1 - 1 - 1 - 1 - 1 - 1 -
-#    1 - 1 - 1 - 1 - 1 - 1 - 1
-#    - 1 - 1 - 1 - 1 - 1 - 1 -
-#    - - 1 - 1 - 1 - 1 - 1 - -
+#    - - 1 - 1 - 2 - 1 - 1 - -
+#    - 1 - 1 - 1 - 2 - 1 - 1 -
+#    1 - 1 - 2 - 1 - 2 - 1 - 1
+#    - 1 - 1 - 2 - 2 - 1 - 1 -
+#    - - 1 - 1 - 2 - 1 - 1 - -
 #    - - - 1 - 1 - 1 - 1 - - -
 #    - - - - 1 - 1 - 1 - - - -
 #    - - - - - 1 - 1 - - - - -
 #    - - - - - - 1 - - - - - -
-
 
 
 
@@ -144,14 +143,17 @@ class Player:
 		self.whiteMeeples = 0           # accumulated white meeples
 		self.yellowsMeeples = 0         # accumulated yellow meeples
 
+
 class Board:
 	def __init__(self):
+		self.width = 6
+		self.height = 5
 		myPool = random.shuffle(Tile.availableTiles)
 
-		self.tiles = [[Tile(myPool) for j in range(5)] for i in range(6)]
+		self.tiles = [[Tile(pool = myPool) for j in range(self.height)] for i in range(self.width)]
 	def draw(self):
-		for x in range(6):
-			for y in range(5):
+		for x in range(self.width):
+			for y in range(self.height):
 				self.tiles[x][y].draw(x = x * 110, y = y * 110)
 
 
