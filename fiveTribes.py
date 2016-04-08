@@ -90,8 +90,8 @@ class Tile:
 
 	def __init__(self, setup):
 		#               r,g,b,w,y
-		#self.meeples = [random.randrange(2),random.randrange(2),random.randrange(2),random.randrange(2),random.randrange(2)]
-		self.meeples = [2,0,0,0,0]
+		self.meeples = [random.randrange(2),random.randrange(2),random.randrange(2),random.randrange(2),random.randrange(2)]
+		#self.meeples = [2,0,0,0,0]
 		self.color = setup[0]        
 		self.value = setup[1]                  # victory point worth of the tile
 		self.reward = setup[2]
@@ -100,22 +100,23 @@ class Tile:
 		self.camel = 'none'                    # 'me', 'other'
 
 
-	def draw(self, x, y):
+	def draw(self, x, y, option = "none"):
 		# background
-		pygame.draw.rect(gameDisplay, (200, 200, 200), [x,y,Tile.size,Tile.size])
+		if option == "highlight":
+			pygame.draw.rect(gameDisplay, (240, 240, 240), [x,y,Tile.size,Tile.size])
+		else:
+			pygame.draw.rect(gameDisplay, (170, 170, 170), [x,y,Tile.size,Tile.size])
 		if self.color == 'blue':
 			pygame.draw.circle(gameDisplay, (150,150,240), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
 		if self.color == 'red':
 			pygame.draw.circle(gameDisplay, (240,150,150), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
-			# draw tile value text
+		# draw tile value text
 		font = pygame.font.Font(None, Tile.size * 1/5)
 		text = font.render(str(self.value), 1, (10,10,10))
 		textpos = (
 			-text.get_rect().center[0] + x + Tile.size * 9/10, 
 			-text.get_rect().center[1] + y + Tile.size * 1/10)
 		gameDisplay.blit(text, textpos)
-
-		# board color and value
 
 		# meeples
 		cX = Tile.size * 1/4
@@ -152,10 +153,16 @@ class Board:
 	tileSpacing = 10
 	def __init__(self):
 		self.tiles = [[Tile(setup = getTile()) for j in range(Board.height)] for i in range(Board.width)]
-	def draw(self):
+	def draw(self, highlights = []):
 		for x in range(Board.width):
 			for y in range(Board.height):
-				self.tiles[x][y].draw(x = x * (Tile.size + Board.tileSpacing), y = y * (Tile.size + Board.tileSpacing))
+				option = "none"
+				if (x, y) in highlights:
+					option = "highlight"
+				self.tiles[x][y].draw(
+					x = x * (Tile.size + Board.tileSpacing), 
+					y = y * (Tile.size + Board.tileSpacing),
+					option = option)
 	def clickTile(self, x, y):
 		retval = 0
 		tileX = x / (Tile.size + self.tileSpacing)
@@ -165,44 +172,45 @@ class Board:
 
 		# if selection is within bounds
 		if tileX >= 0 and tileX < Board.width and tileY >= 0 and tileY < Board.height:
-			retval = getResolvableTiles(tileX, tileY, Board.width, Board.height, radius= sum(self.tiles[tileX][tileY].meeples) + 1)
+			retval = self.getResolvableTiles(x=tileX, y=tileY, radius= sum(self.tiles[tileX][tileY].meeples) + 1)
 		return retval
+
+	def getResolvableTiles(self, x = 0, y = 0, radius = 0):
+		xy_pairs = []
+		
+		for scanx in range(0, radius):
+			for scany in range(0, radius):
+				if scanx == 0 and scany == 0:
+					continue
+				if (scanx + scany + radius + 1) % 2 == 0 and (scanx + scany) <= radius:
+					xy_pairs = xy_pairs + [(x + scanx, y + scany)]
+					if scanx != 0:
+						xy_pairs = xy_pairs + [(x - scanx, y + scany)]
+					if scany != 0:
+						xy_pairs = xy_pairs + [(x + scanx, y - scany)]
+					if scanx != 0 and scany !=0:
+						xy_pairs = xy_pairs + [(x - scanx, y - scany)]
+		if (radius + 1) % 2 == 0 and radius > 3:
+			xy_pairs = xy_pairs + [(x, y)]
+
+		# clean up pairs
+		retval = []
+		for pair in xy_pairs:
+			if pair[0] >= 0 and pair[0] < self.width \
+			and pair[1] >= 0 and pair[1] < self.height:
+				retval = retval + [pair]
+		return retval
+
+
+	def resolveTile(self, tile = [], meeples = []):
+
+		return
+
 
 
 #==============================================================================
 
 
-
-def getResolvableTiles(x = 0, y = 0, w = 0, h = 0, radius = 0):
-	xy_pairs = []
-	
-	for scanx in range(0, radius):
-		for scany in range(0, radius):
-			if scanx == 0 and scany == 0:
-				continue
-			if (scanx + scany) % 2 == 0 and (scanx + scany) <= radius:
-				xy_pairs = xy_pairs + [(x + scanx, y + scany)]
-				if scanx != 0:
-					xy_pairs = xy_pairs + [(x - scanx, y + scany)]
-				if scany != 0:
-					xy_pairs = xy_pairs + [(x + scanx, y - scany)]
-				if scanx != 0 and scany !=0:
-					xy_pairs = xy_pairs + [(x - scanx, y - scany)]
-	if radius % 2 == 0 and radius > 2:
-		xy_pairs = xy_pairs + [(x, y)]
-
-	# clean up pairs
-	for pair in xy_pairs:
-		if pair[0] < 0 or pair[0] >= w \
-		or pair[1] < 0 or pair[1] >= h:
-			xy_pairs.remove(pair)
-	return xy_pairs
-
-
-
-
-def resolveTile(tile):
-	return
 
 
 
@@ -221,6 +229,7 @@ gameDisplay = pygame.display.set_mode((700,700))
 pygame.display.set_caption('Five Tribes Calculator')
 
 gameExit = False
+highlights = [(0,0)]
 
 while not gameExit:
 	for event in pygame.event.get():
@@ -231,11 +240,11 @@ while not gameExit:
 				gameExit = True
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			pos = pygame.mouse.get_pos()
-
-			print myBoard.clickTile(x = pos[0],y = pos[1])
+			highlights = myBoard.clickTile(x = pos[0],y = pos[1])
+			print highlights
  
 	gameDisplay.fill((0,0,0))
-	myBoard.draw()
+	myBoard.draw(highlights)
 	pygame.display.update()
  
 pygame.quit()
