@@ -315,15 +315,48 @@ class Button:
 	def down(self):
 		self.method_click()
 
+class List:
+	def __init__(self, x, y, w, h, color, text, size, method_select):
+		self.x = x
+		self.y = y
+		self.w = w
+		self.h = h
+		self.color = color
+		self.text = text
+		self.size = size
+		self.method_select = method_select
+	def draw(self):
+		pygame.draw.rect(gameDisplay, (20,20,20), [self.x,self.y,self.w,self.h])
+		drawy = 0
+		for line in self.text:
+			font = pygame.font.Font(None, self.size * 4 / 3)
+			text = font.render(line, 1, self.color)
+			textpos = (
+				-text.get_rect().center[0] + self.x         + self.w * 5/10, 
+				-text.get_rect().center[1] + self.y + drawy + self.size)
+			gameDisplay.blit(text, textpos)
+			drawy = drawy + self.size
+	def down(self, pos):
+		index = (int(pos[1] - self.size * 1.5) / self.size) - 1
+		if index <= len(self.text):
+			self.method_select(index)
+
 
 class GUI:
 	def __init__(self):
 		self.buttons = []
+		self.lists = []
+		self.mode = "edit"
 	def draw(self):
 		for butt in self.buttons:
 			butt.draw()
+		if self.mode == "solve":
+			for lis in self.lists:
+				lis.draw()
 	def addButton(self, x, y, w, h, color, text, shape, method_click):
 		self.buttons = self.buttons + [Button(x, y, w, h, color, text, shape, method_click)]
+	def addList(self, x, y, w, h, color, text, size, method_select):
+		self.lists = self.lists + [List(x, y, w, h, color, text, size, method_select)]
 	def mouseDown(self, pos):
 		for butt in self.buttons:
 			if pos[0] > butt.x \
@@ -331,42 +364,70 @@ class GUI:
 			and pos[1] > butt.y \
 			and pos[1] < butt.y + butt.h:
 				butt.down()
+		for lis in self.lists:
+			if pos[0] > lis.x \
+			and pos[0] < lis.x + lis.w \
+			and pos[1] > lis.y \
+			and pos[1] < lis.y + lis.h:
+				lis.down(pos)
 
 
 
 #==============================================================================
 
-def changeMode():
-	print "mode changed"
+def mode_edit():
+	global highlights_white
+	global highlights_red
+	highlights_white = []
+	highlights_red = []
+	myGui.mode = "edit"
 
-def solve():
-	results = myBoard.getResults_board(myPlayer)
+def mode_solve():
+	textResults = []
+	myGui.mode = "solve"
+	global solvedResults
+	solvedResults = myBoard.getResults_board(myPlayer)
 	print "--- board results ---"
-	for x in results[0:15]:
-		print resultText.format(score=x[0], color=x[1], sx=x[2][0], sy=x[2][1], tx=x[3][0], ty=x[3][1])
+	for x in solvedResults[0:15]:
+		result = resultText.format(score=x[0], color=x[1], sx=x[2][0], sy=x[2][1], tx=x[3][0], ty=x[3][1])
+		textResults = textResults + [result]
+		print result
+	myGui.lists[0].text = textResults
+
+def selectResult(x = 0):
+	global solvedResults
+	global highlights_white
+	global highlights_red
+	res = solvedResults[x]
+
+	highlights_white = [tuple(res[2])]
+	highlights_red = [tuple(res[3])]
+
+	print "selected: " + str(x)
+	print resultText.format(score=res[0], color=res[1], sx=res[2][0], sy=res[2][1], tx=res[3][0], ty=res[3][1])
 
 
 #==============================================================================
 
 
-resultText = "{score:>2} {color:6} from: {sx:1},{sy:1} --> to: {tx:1},{ty:1}"
+resultText = "{score:>2} {color:6}  {sx:1},{sy:1} --> {tx:1},{ty:1}"
+
 
 pygame.init()
+gameDisplay = pygame.display.set_mode((1000,700))
+pygame.display.set_caption('Five Tribes Calculator')
+gameExit = False
 
 myGui = GUI()
 myBoard = Board()
 myPlayer = Player("Player1")
 selectedTile = (0,0)
-
-gameDisplay = pygame.display.set_mode((1000,700))
-pygame.display.set_caption('Five Tribes Calculator')
-
-gameExit = False
-highlights = []
-
-myGui.addButton(660, 20, 80, 30, (150,150,150), "test", "rect", changeMode)
-myGui.addButton(660, 60, 80, 30, (150,150,150), "solve", "rect", solve)
-
+highlights_white = []
+highlights_red = []
+solvedResults = []
+myGui.addButton(660, 10, 60, 25, (150,150,150), "edit", "rect", mode_edit)
+myGui.addButton(730, 10, 60, 25, (150,150,150), "solve", "rect", mode_solve)
+myGui.addList(660, 40, 200, 600, (250, 250, 250), solvedResults, 20, selectResult)
 
 while not gameExit:
 	event = pygame.event.wait()
@@ -378,12 +439,13 @@ while not gameExit:
 			gameExit = True
 	if event.type == pygame.MOUSEBUTTONDOWN:
 		selectedTile = myBoard.getTileChord(pygame.mouse.get_pos())
+		highlights_red = [selectedTile]
 		myGui.mouseDown(pygame.mouse.get_pos())
 
 	if event.type != pygame.MOUSEMOTION:
 
 		gameDisplay.fill((0,0,0))
-		myBoard.draw(highlights_white = highlights, highlights_red = [selectedTile])
+		myBoard.draw(highlights_white = highlights_white, highlights_red = highlights_red)
 		myGui.draw()
 		pygame.display.update()
 
