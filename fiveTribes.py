@@ -2,40 +2,10 @@ import pygame
 import math
 import random
 
+# Manual
+# http://cdn0.daysofwonder.com/five-tribes/en/img/ft_rules_en.pdf
+
 # NOTES ON MEEPLE PLACEMENT
-
-# 1
-#    - 1 -
-#    1 X 1
-#    - 1 -
-
-# 2
-#    - - 1 - -
-#    - 1 - 1 -
-#    1 - X - 1
-#    - 1 - 1 -
-#    - - 1 - -
-
-# 3
-#    - - - 1 - - -
-#    - - 1 - 1 - -
-#    - 1 - 1 - 1 -
-#    1 - 1 X 1 - 1
-#    - 1 - 1 - 1 -
-#    - - 1 - 1 - -
-#    - - - 1 - - -
-
-# 4
-#    - - - - 1 - - - -
-#    - - - 1 - 1 - - -
-#    - - 1 - 1 - 1 - -
-#    - 1 - 1 - 1 - 1 -
-#    1 - 1 - 1 - 1 - 1
-#    - 1 - 1 - 1 - 1 -
-#    - - 1 - 1 - 1 - -
-#    - - - 1 - 1 - - -
-#    - - - - 1 - - - -
-
 # 5
 #    - - - - - 1 - - - - -
 #    - - - - 1 - 1 - - - -
@@ -64,19 +34,32 @@ import random
 #    - - - - - 1 - 1 - - - - -
 #    - - - - - - 1 - - - - - -
 
-
-
+# TODO -
+# - slaves can be sold to increase blue factor
+# - reds
+# - calculate cards / merchants
+# - reorganize some OOP things
 
 
 availableTiles = \
 	[('blue', 5 , 'village')] * 5 + \
 	[('blue', 6 , 'djinn')  ] * 4 + \
-	[('blue', 10, 'djinn'),         \
-	 ('blue', 12, 'djinn'),         \
-	 ('blue', 15, 'djinn')  ] +     \
+	[('blue', 10, 'djinn')  ]     + \
+	[('blue', 12, 'djinn')  ]     + \
+	[('blue', 15, 'djinn')  ]     + \
 	[('red', 4, 'l_market') ] * 4 + \
 	[('red', 6, 's_market') ] * 8 + \
 	[('red', 8, 'palm')     ] * 6
+
+availableCards = \
+	["ivory", "jewels", "gold"]  * 2 + \
+	["papyrus", "silk", "spice"] * 4 + \
+	["fish", "wheat", "pottery"] * 6
+
+
+
+
+#==============================================================================
 
 
 class Tile:
@@ -142,6 +125,8 @@ class Tile:
 						cX = Tile.size * 3/8
 						cY = Tile.size * 3/8
 
+#==============================================================================
+
 
 class Player:
 	def __init__(self, name):
@@ -154,12 +139,18 @@ class Player:
 		self.whiteMeepleValue = 2
 		self.villageValue = 5
 		self.palmValue = 3
+		self.cardValue = [0, 1, 3, 7, 13, 21, 30, 40, 50, 60]
+
+#==============================================================================
+
 
 def getTile():
+	global availableTiles
 	myPool = availableTiles
 	retval = myPool[0]
 	myPool.remove(retval)
 	return retval
+
 
 
 class Board:
@@ -226,8 +217,6 @@ class Board:
 		retval = 0
 		for scanx in range(-1, 1):
 			for scany in range(-1, 1):
-				if scanx == 0 and scany == 0:
-					continue
 				if self.checkInBounds(scanx, scany) == 1:
 					if self.tiles[scanx][scany].color == "blue":
 						retval = retval + 1
@@ -292,7 +281,7 @@ class Board:
 
 
 class Button:
-	def __init__(self, x, y, w, h, color, text, shape, method_click):
+	def __init__(self, x, y, w, h, color, text, shape, method_click, layers):
 		self.x = x
 		self.y = y
 		self.w = w
@@ -301,6 +290,7 @@ class Button:
 		self.text = text
 		self.shape = shape
 		self.method_click = method_click
+		self.layers = layers
 	def draw(self):
 		if self.shape == "rect":
 			pygame.draw.rect(gameDisplay, self.color, [self.x,self.y,self.w,self.h])
@@ -316,7 +306,7 @@ class Button:
 		self.method_click()
 
 class List:
-	def __init__(self, x, y, w, h, color, text, size, method_select):
+	def __init__(self, x, y, w, h, color, text, size, method_select, layers):
 		self.x = x
 		self.y = y
 		self.w = w
@@ -325,6 +315,7 @@ class List:
 		self.text = text
 		self.size = size
 		self.method_select = method_select
+		self.layers = layers
 	def draw(self):
 		pygame.draw.rect(gameDisplay, (20,20,20), [self.x,self.y,self.w,self.h])
 		drawy = 0
@@ -349,27 +340,30 @@ class GUI:
 		self.mode = "edit"
 	def draw(self):
 		for butt in self.buttons:
-			butt.draw()
-		if self.mode == "solve":
-			for lis in self.lists:
+			if self.mode in butt.layers:
+				butt.draw()
+		for lis in self.lists:
+			if self.mode in lis.layers:
 				lis.draw()
-	def addButton(self, x, y, w, h, color, text, shape, method_click):
-		self.buttons = self.buttons + [Button(x, y, w, h, color, text, shape, method_click)]
-	def addList(self, x, y, w, h, color, text, size, method_select):
-		self.lists = self.lists + [List(x, y, w, h, color, text, size, method_select)]
+	def addButton(self, x, y, w, h, color, text, shape, method_click, filt):
+		self.buttons = self.buttons + [Button(x, y, w, h, color, text, shape, method_click, filt)]
+	def addList(self, x, y, w, h, color, text, size, method_select, filt):
+		self.lists = self.lists + [List(x, y, w, h, color, text, size, method_select, filt)]
 	def mouseDown(self, pos):
 		for butt in self.buttons:
-			if pos[0] > butt.x \
-			and pos[0] < butt.x + butt.w \
-			and pos[1] > butt.y \
-			and pos[1] < butt.y + butt.h:
-				butt.down()
+			if self.mode in butt.layers:
+				if pos[0] > butt.x \
+					and pos[0] < butt.x + butt.w \
+					and pos[1] > butt.y \
+					and pos[1] < butt.y + butt.h:
+					butt.down()
 		for lis in self.lists:
-			if pos[0] > lis.x \
-			and pos[0] < lis.x + lis.w \
-			and pos[1] > lis.y \
-			and pos[1] < lis.y + lis.h:
-				lis.down(pos)
+			if self.mode in lis.layers:
+				if pos[0] > lis.x \
+				and pos[0] < lis.x + lis.w \
+				and pos[1] > lis.y \
+				and pos[1] < lis.y + lis.h:
+					lis.down(pos)
 
 
 
@@ -425,9 +419,9 @@ selectedTile = (0,0)
 highlights_white = []
 highlights_red = []
 solvedResults = []
-myGui.addButton(660, 10, 60, 25, (150,150,150), "edit", "rect", mode_edit)
-myGui.addButton(730, 10, 60, 25, (150,150,150), "solve", "rect", mode_solve)
-myGui.addList(660, 40, 200, 600, (250, 250, 250), solvedResults, 20, selectResult)
+myGui.addButton(660, 10, 60, 25, (150,150,150), "edit", "rect", mode_edit, ["edit", "solve"])
+myGui.addButton(730, 10, 60, 25, (150,150,150), "solve", "rect", mode_solve, ["edit", "solve"])
+myGui.addList(660, 40, 200, 600, (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
 
 while not gameExit:
 	event = pygame.event.wait()
