@@ -244,20 +244,25 @@ class Board:
 		y = tile[1]
 		targetTile = self.tiles[x][y]     # landing tile
 		results = [0,0,0,0,0]             # scores per color
-
-		# red
-		#if meeples[0] > 0 and targetTile.meeples[0] > 0:
-		# green
-		#if meeples[1] > 0 and targetTile.meeples[1] > 0:
-		# blue
+		isValidMove = [False,False,False,False,False]
+		#--- red ---
+		if meeples[0] > 0 and targetTile.meeples[0] > 0:
+			isValidMove[0] = True
+		#--- green ---
+		if meeples[1] > 0 and targetTile.meeples[1] > 0:
+			isValidMove[1] = True
+		#--- blue ---
 		if meeples[2] > 0 and targetTile.meeples[2] > 0:
-			results[2] = self.countAdjacentBlueTiles(x, y) * (meeples[2] + targetTile.meeples[2])
-		# white
+			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + targetTile.meeples[2])
+			isValidMove[2] = True
+		#--- white ---
 		if meeples[3] > 0 and targetTile.meeples[3] > 0:
-			results[3] = (meeples[3] + targetTile.meeples[3]) * player.whiteMeepleValue
-		# yellow
+			results[3] = (1 + targetTile.meeples[3]) * player.whiteMeepleValue
+			isValidMove[3] = True
+		#--- yellow ---
 		if meeples[4] > 0 and targetTile.meeples[4] > 0:
-			results[4] = (meeples[4] + targetTile.meeples[4]) * player.yellowMeepleValue
+			results[4] = (1 + targetTile.meeples[4]) * player.yellowMeepleValue
+			isValidMove[4] = True
 		
 		# tile value / village / palm tree
 		bonus = 0
@@ -268,7 +273,9 @@ class Board:
 				bonus = bonus + player.palmValue
 			if targetTile.reward == "village":
 				bonus = bonus + player.villageValue
-		results = [x + bonus for x in results]
+		for x in range(5):
+			if isValidMove[x]:
+				results[x] = results[x] + bonus
 
 		return results
 
