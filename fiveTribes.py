@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import os
 from gui import GUI
 
 # Manual
@@ -101,12 +102,22 @@ class Tile:
 			-text.get_rect().center[1] + y + Tile.size * 1/10)
 		myDisplay.blit(text, textpos)
 
+		# reward
+		if self.reward == "palm":
+			sprite = pygame.transform.scale(myGui.sprites["palm"], (Tile.size / 4, Tile.size / 4))
+			myDisplay.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
+		if self.reward == "village":
+			sprite = pygame.transform.scale(myGui.sprites["palace"], (Tile.size / 4, Tile.size / 4))
+			myDisplay.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
+
 		# meeples
 		cX = Tile.size * 1/4
 		cY = Tile.size * 1/4
 		for meep in range(5):
 			for stack in range(self.meeples[meep]):
-				pygame.draw.circle(myDisplay, Tile.meepleColor[meep],   [x + cX, y + cY], Tile.size / 8)
+				#pygame.draw.circle(myDisplay, Tile.meepleColor[meep],   [x + cX, y + cY], Tile.size / 8)
+				sprite = pygame.transform.scale(myGui.sprites["meeple"][meep], (Tile.size / 4, Tile.size / 4))
+				myDisplay.blit(sprite, (x + cX - Tile.size / 8, y + cY - Tile.size / 8))
 				cX += Tile.size * 1/4
 				if cX >= Tile.size:
 					cX = Tile.size * 1/4
@@ -399,6 +410,11 @@ def setYellows(value = 0):
 	global selectedTile
 	myBoard.tiles[selectedTile[0]][selectedTile[1]].meeples[4] = value
 
+def colorize(image, newColor):
+	image = image.convert()
+	image.fill(newColor[0:3] + (255,), None, pygame.BLEND_RGBA_MULT)
+	image.set_colorkey((0,0,0))
+	return image
 
 #==============================================================================
 #    Init
@@ -422,21 +438,30 @@ highlights_white = []
 highlights_red = []
 solvedResults = []
 
+# sprites
+meepSprites = []
+for meep in range(5):
+	meepSprites = meepSprites + [colorize(pygame.image.load(os.path.join('images', 'meeple_masked.png')), Tile.meepleColor[meep] )]
+myGui.sprites["meeple"] = meepSprites
+myGui.sprites["palm"] = colorize(pygame.image.load(os.path.join('images', 'palm_masked.png')), (255,255,255))
+myGui.sprites["palace"] = colorize(pygame.image.load(os.path.join('images', 'palace_masked.png')), (255,255,255))
+
+
 # main buttons
 myGui.addButton("modeEdit", (660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["edit", "solve"])
 myGui.addButton("modeSolve", (730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["edit", "solve"])
 
 # solve mode
-myGui.addList("results", (660, 40, 200, 600), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
+myGui.addList("results", (660, 40, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
 
 # edit mode
-myGui.addButton("clearTile", (660, 50, 60, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["edit"])
-myGui.addList("tiles", (660, 200, 200, 180), (250, 250, 250), [tileText.format(remaining=x[0], color=x[1], value=x[2], reward=x[3]) for x in Board.availableTiles_histo], size = 20, method_select = selectTile, layers = ["edit"])
-myGui.addValueBox("reds"   , (660,  80, 100, 20), (255,100,100), (0,10), 20, setReds, ["edit"])
-myGui.addValueBox("greens" , (660, 100, 100, 20), (100,255,100), (0,10), 20, setGreens, ["edit"])
+myGui.addButton("clearTile", (660, 40, 100, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["edit"])
+myGui.addList("tiles", (660, 200, 250, 180), (250, 250, 250), ["..."], 20, selectTile, ["edit"])
+myGui.addValueBox("reds"   , (660,  70, 100, 20), (255,100,100), (0,10), 20, setReds, ["edit"])
+myGui.addValueBox("greens" , (660,  95, 100, 20), (100,255,100), (0,10), 20, setGreens, ["edit"])
 myGui.addValueBox("blues"  , (660, 120, 100, 20), (100,100,255), (0,10), 20, setBlues, ["edit"])
-myGui.addValueBox("whites" , (660, 140, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
-myGui.addValueBox("yellows", (660, 160, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
+myGui.addValueBox("whites" , (660, 145, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
+myGui.addValueBox("yellows", (660, 170, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
 
 
 #==============================================================================
