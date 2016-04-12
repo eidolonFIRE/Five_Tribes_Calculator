@@ -1,0 +1,5 @@
+*.pyc
+
+# Sublime 3 Files
+*.sublime-project
+*.sublime-workspace
