@@ -58,6 +58,7 @@ from gui import GUI
 def mode_cards():
 	global myPlayer
 	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+	myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 	myGui.mode = "cards"
 
 def cards_decr(index = 0):
@@ -65,13 +66,13 @@ def cards_decr(index = 0):
 	if myPlayer.cards_histo[index][0] > 0:
 		myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] - 1
 		myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
-		print "card score: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))
+		myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 
 def cards_incr(index = 0):
 	global myPlayer
 	myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] + 1
 	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
-	print "card score: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))
+	myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 
 
 
@@ -245,12 +246,14 @@ myGui.addValueBox("yellows", (660, 170, 100, 20), (255,242,  0), (0,10), 20, set
 myGui.addButton("modeCards", (800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
 myGui.addList("cards_player_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["cards"])
 myGui.addList("cards_player_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["cards"])
+myGui.addList("cards_player", (660, 170, 160, 40), (250, 250, 250), ["..."], 20, cards_incr, ["cards"])
+
 
 # deck mode
 myGui.addButton("modeDeck", (870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
 myGui.addList("deck_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, deck_decr, ["deck"])
 myGui.addList("deck_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, deck_incr, ["deck"])
-myGui.addList("deck", (660, 410, 160, 200), (250, 250, 250), ["..."], 20, None, ["deck"])
+#myGui.addList("deck", (660, 410, 160, 200), (250, 250, 250), ["..."], 20, None, ["deck"])
 
 
 
