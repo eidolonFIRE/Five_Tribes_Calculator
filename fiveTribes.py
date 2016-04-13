@@ -8,40 +8,13 @@ from gui import GUI, Button, List, ValueBox, CheckBox
 # Manual
 # http://cdn0.daysofwonder.com/five-tribes/en/img/ft_rules_en.pdf
 
-# NOTES ON MEEPLE PLACEMENT
-# 5
-#    - - - - - 1 - - - - -
-#    - - - - 1 - 1 - - - -
-#    - - - 1 - 1 - 1 - - -
-#    - - 1 - 1 - 1 - 1 - -
-#    - 1 - 1 - 2 - 1 - 1 -
-#    1 - 1 - 2 X 2 - 1 - 1
-#    - 1 - 1 - 2 - 1 - 1 -
-#    - - 1 - 1 - 1 - 1 - -
-#    - - - 1 - 1 - 1 - - -
-#    - - - - 1 - 1 - - - -
-#    - - - - - 1 - - - - -
 
-# 6
-#    - - - - - - 1 - - - - - -
-#    - - - - - 1 - 1 - - - - -
-#    - - - - 1 - 1 - 1 - - - -
-#    - - - 1 - 1 - 1 - 1 - - -
-#    - - 1 - 1 - 2 - 1 - 1 - -
-#    - 1 - 1 - 1 - 2 - 1 - 1 -
-#    1 - 1 - 2 - 1 - 2 - 1 - 1
-#    - 1 - 1 - 2 - 2 - 1 - 1 -
-#    - - 1 - 1 - 2 - 1 - 1 - -
-#    - - - 1 - 1 - 1 - 1 - - -
-#    - - - - 1 - 1 - 1 - - - -
-#    - - - - - 1 - 1 - - - - -
-#    - - - - - - 1 - - - - - -
 
-# TODO -
-# - slaves can be sold to increase blue factor
+# TODO
 # - reds
-# - calculate cards / merchants
-# - reorganize some OOP things
+# - calculate merchants
+# - real-time scalable GUI
+
 
 
 
@@ -57,22 +30,22 @@ from gui import GUI, Button, List, ValueBox, CheckBox
 
 def mode_cards():
 	global myPlayer
-	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
-	myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
-	myGui.mode = "cards"
+	myGui.objects["player_cards_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+	myGui.objects["player_cards"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
+	myGui.mode = "player"
 
 def cards_decr(index = 0):
 	global myPlayer
 	if myPlayer.cards_histo[index][0] > 0:
 		myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] - 1
-		myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
-		myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
+		myGui.objects["player_cards_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+		myGui.objects["player_cards"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 
 def cards_incr(index = 0):
 	global myPlayer
 	myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] + 1
-	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
-	myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
+	myGui.objects["player_cards_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+	myGui.objects["player_cards"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 
 def setSlaves(value = 0):
 	global myPlayer
@@ -98,12 +71,18 @@ def deckPop(index = 0):
 
 
 
-def mode_edit():
+def mode_board():
 	global highlights_white
 	global highlights_red
 	highlights_white = []
 	highlights_red = []
-	myGui.mode = "edit"
+	myGui.mode = "board"
+
+def selectOwnership(index = 0):
+	global selectedTile
+	camel = Player.availablePlayers[index][0]
+	myBoard.tiles[selectedTile[0]][selectedTile[1]].camel = camel
+	myGui.objects["ownership"].text = [[("X) " if x[0] == camel else " ) ") + x[0], x[1]] for x in Player.availablePlayers]
 
 def mode_solve():
 	textResults = []
@@ -113,9 +92,9 @@ def mode_solve():
 	#print "--- board results ---"
 	for x in solvedResults[0:20]:
 		result = resultText.format(score=x[0], color=x[1], sx=x[2][0], sy=x[2][1], tx=x[3][0], ty=x[3][1])
-		textResults = textResults + [result]
+		textResults = textResults + [[result, Tile.meepleColorHash[x[1]]]]
 		#print result
-	myGui.objects["results"].text = textResults
+	myGui.objects["solve_results"].text = textResults
 
 def setUseSlaves(value = False):
 	global myPlayer
@@ -165,10 +144,24 @@ def setSelectedTile(pos):
 	myGui.objects["blues"  ].value = selTile.meeples[2]
 	myGui.objects["whites" ].value = selTile.meeples[3]
 	myGui.objects["yellows"].value = selTile.meeples[4]
+	camel = myBoard.tiles[selectedTile[0]][selectedTile[1]].camel
+	myGui.objects["ownership"].text = [[("X) " if x[0] == camel else " ) ") + x[0], x[1]] for x in Player.availablePlayers]
+
 
 
 def clearTile():
 	global selectedTile
+	x = selectedTile[0]
+	y = selectedTile[1]
+	selTile = myBoard.tiles[x][y]
+	if selTile.value > 0:
+		# restore available tile back to list
+		for histTile in myBoard.availableTiles_histo:
+			if selTile.color == histTile[1] \
+			and selTile.value == histTile[2] \
+			and selTile.reward == histTile[3]:
+				histTile[0] = histTile[0] + 1
+				break
 	myBoard.clearTile(selectedTile)
 
 def setReds(value = 0):
@@ -215,6 +208,7 @@ pygame.display.set_caption('Five Tribes Calculator')
 simExit = False
 
 myGui = GUI(myDisplay)
+myGui.mode = "board"
 myBoard = Board()
 myPlayer = Player("Player1")
 myDeck = Deck()
@@ -226,43 +220,44 @@ solvedResults = []
 
 # sprites
 meepSprites = []
-for meep in range(5):
-	meepSprites = meepSprites + [colorize(pygame.image.load(os.path.join('images', 'meeple_masked.png')), Tile.meepleColor[meep] )]
+for meep in Tile.meepleColor:
+	meepSprites = meepSprites + [colorize(pygame.image.load(os.path.join('images', 'meeple.bmp')), meep )]
 Tile.sprites["meeple"] = meepSprites
-Tile.sprites["palm"] = colorize(pygame.image.load(os.path.join('images', 'palm_masked.png')), (255,255,255))
+Tile.sprites["palm"]   = colorize(pygame.image.load(os.path.join('images', 'palm_masked.png')), (255,255,255))
 Tile.sprites["palace"] = colorize(pygame.image.load(os.path.join('images', 'palace_masked.png')), (255,255,255))
-
-
-# main buttons
-myGui.objects["modeEdit"]  = Button((660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["all"])
-myGui.objects["modeSolve"] = Button((730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
+camelSprites = []
+for player in Player.availablePlayers:
+	camelSprites = camelSprites + [colorize(pygame.image.load(os.path.join('images', 'camel.bmp')), player[1] )]
+Tile.sprites["camel"] = camelSprites
 
 # solve mode
-myGui.objects["results"]           = List((660, 70, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
-myGui.objects["player_useSlaves"]  = CheckBox((660, 40, 160, 20), False, (100,100,100), "Use Slaves", 20, setUseSlaves, ["solve"])
+myGui.objects["modeSolve"]       = Button(pygame.Rect(730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
+myGui.objects["solve_results"]   = List(pygame.Rect(660, 70, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
+myGui.objects["solve_useSlaves"] = CheckBox(pygame.Rect(660, 40, 160, 20), False, (100,100,100), "Use Slaves", 20, setUseSlaves, ["solve"])
 
+# board mode
+myGui.objects["modeBoard"] = Button(pygame.Rect(660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_board, ["all"])
+myGui.objects["clearTile"] = Button(pygame.Rect(660, 40, 100, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["board"])
+myGui.objects["tiles"]     = List(pygame.Rect(660, 200, 250, 180), (250, 250, 250), ["..."], 20, selectTile, ["board"])
+myGui.objects["reds"]      = ValueBox(pygame.Rect(660,  70, 110, 20), (255,100,100), (0,10), 20, setReds, ["board"])
+myGui.objects["greens"]    = ValueBox(pygame.Rect(660,  95, 110, 20), (100,255,100), (0,10), 20, setGreens, ["board"])
+myGui.objects["blues"]     = ValueBox(pygame.Rect(660, 120, 110, 20), (100,100,255), (0,10), 20, setBlues, ["board"])
+myGui.objects["whites"]    = ValueBox(pygame.Rect(660, 145, 110, 20), (255,255,255), (0,10), 20, setWhites, ["board"])
+myGui.objects["yellows"]   = ValueBox(pygame.Rect(660, 170, 110, 20), (255,242,  0), (0,10), 20, setYellows, ["board"])
+myGui.objects["ownership"] = List(pygame.Rect(780, 70, 130, 100), (100,100,100), [["-) "  + x[0], x[1]] for x in Player.availablePlayers], 20, selectOwnership, ["board"])
 
-# edit mode
-myGui.objects["clearTile"] = Button((660, 40, 100, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["edit"])
-myGui.objects["tiles"]     = List((660, 200, 250, 180), (250, 250, 250), ["..."], 20, selectTile, ["edit"])
-myGui.objects["reds"]      = ValueBox((660,  70, 100, 20), (255,100,100), (0,10), 20, setReds, ["edit"])
-myGui.objects["greens"]    = ValueBox((660,  95, 100, 20), (100,255,100), (0,10), 20, setGreens, ["edit"])
-myGui.objects["blues"]     = ValueBox((660, 120, 100, 20), (100,100,255), (0,10), 20, setBlues, ["edit"])
-myGui.objects["whites"]    = ValueBox((660, 145, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
-myGui.objects["yellows"]   = ValueBox((660, 170, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
-
-# cards mode
-myGui.objects["modeCards"]         = Button((800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
-myGui.objects["cards_player_decr"] = List((660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["cards"])
-myGui.objects["cards_player_incr"] = List((740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["cards"])
-myGui.objects["cards_player"]      = List((660, 170, 160, 40), (250, 250, 250), ["..."], 20, cards_incr, ["cards"])
-myGui.objects["label_slaves"]      = Button((660, 110, 160, 20), (100, 100, 100), "Slave Cards", 20, "rect", None, ["cards"])
-myGui.objects["player_slaves"]     = ValueBox((660, 130, 160, 20), (100,100,100), (0, 10), 20, setSlaves, ["cards"])
+# player mode
+myGui.objects["modeCards"]            = Button(pygame.Rect(800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
+myGui.objects["player_cards_decr"]    = List(pygame.Rect(660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["player"])
+myGui.objects["player_cards_incr"]    = List(pygame.Rect(740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["player"])
+myGui.objects["player_cards"]         = List(pygame.Rect(660, 170, 160, 40), (250, 250, 250), ["..."], 20, cards_incr, ["player"])
+myGui.objects["player_slaves_slaves"] = Button(pygame.Rect(660, 110, 160, 20), (100, 100, 100), "Slave Cards", 20, "rect", None, ["player"])
+myGui.objects["player_slaves"]        = ValueBox(pygame.Rect(660, 130, 160, 20), (100,100,100), (0, 10), 20, setSlaves, ["player"])
 
 # deck mode
-myGui.objects["modeDeck"]  = Button((870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
-myGui.objects["deckAdd"]   = List((660, 100, 160, 200), (250, 250, 250), ["..."], 20, deckAdd, ["deck"])
-myGui.objects["deck"]      = List((660, 310, 160, 200), (250, 250, 250), ["..."], 20, deckPop, ["deck"])
+myGui.objects["modeDeck"]  = Button(pygame.Rect(870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
+myGui.objects["deckAdd"]   = List(pygame.Rect(660, 100, 160, 200), (250, 250, 250), ["..."], 20, deckAdd, ["deck"])
+myGui.objects["deck"]      = List(pygame.Rect(660, 310, 160, 200), (250, 250, 250), ["..."], 20, deckPop, ["deck"])
 
 
 
@@ -289,8 +284,8 @@ while not simExit:
 	if event.type != pygame.MOUSEMOTION:
 
 		highlights_red = [selectedTile]
-		if myGui.mode == "edit":
-			myGui.objects["tiles"].text = [tileText.format(remaining=x[0], color=x[1], value=x[2], reward=x[3]) for x in Board.availableTiles_histo]
+		if myGui.mode == "board":
+			myGui.objects["tiles"].text = [[tileText.format(remaining=x[0], color=x[1], value=x[2], reward=x[3]), Tile.tileColor[x[1] if (x[0] > 0) else "none"]] for x in Board.availableTiles_histo]
 
 		myDisplay.fill((0,0,0))
 		myBoard.draw(myDisplay, highlights_white = highlights_white, highlights_red = highlights_red)

@@ -5,15 +5,24 @@ class Tile:
 	meepleColor = [
 					(240,  0,  0),
 					(0  ,230,  0),
-					(0  ,  0,250),
+					( 10, 10,250),
 					(250,250,250),
 					(240,240,  0),  ]
+	meepleColorHash = {
+					""       : ( 50, 50, 50),
+					"none"   : ( 50, 50, 50),
+					"red"    : (240,  0,  0),
+					"green"  : (0  ,230,  0),
+					"blue"   : ( 10, 10,250),
+					"white"  : (250,250,250),
+					"yellow" : (240,240,  0),}
 	meepleColorText = [
 					"red",
 					"green",
 					"blue",
 					"white",
 					"yellow",  ]
+	tileColor = {"none":(50,50,50),"blue":(150,150,240), "red":(240,150,150)}
 	size = 100
 	sprites = {}
 
@@ -21,13 +30,12 @@ class Tile:
 		#               r,g,b,w,y
 		#self.meeples = [random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3)]
 		self.meeples = [0,0,0,0,0]
-		self.color = setup[0]        
+		self.color = setup[0]
 		self.value = setup[1]                  # victory point worth of the tile
 		self.reward = setup[2]
 		self.palmTrees = 0                     # accumulated palm trees
 		self.village = 0                       # accumulated village
-		self.camel = 'none'                    # 'me', 'other'
-
+		self.camel = "none"                    # 'me', 'other'
 
 	def draw(self, display, x, y, option = "none"):
 		# background
@@ -43,10 +51,7 @@ class Tile:
 			else:
 				# for blank tile just draw grey circle
 				pygame.draw.circle(display, (20, 20, 20), [x + Tile.size/2,y+Tile.size/2], Tile.size * 1/2)
-		if self.color == 'blue':
-			pygame.draw.circle(display, (150,150,240), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
-		if self.color == 'red':
-			pygame.draw.circle(display, (240,150,150), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
+		pygame.draw.circle(display, self.tileColor[self.color], [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
 		# draw tile value text
 		font = pygame.font.Font(None, Tile.size * 1/5)
 		text = font.render(str(self.value), 1, (10,10,10))
@@ -54,6 +59,11 @@ class Tile:
 			-text.get_rect().center[0] + x + Tile.size * 9/10, 
 			-text.get_rect().center[1] + y + Tile.size * 1/10)
 		display.blit(text, textpos)
+
+		# owner (camel)
+		if self.camel != "none":
+			sprite = pygame.transform.scale(Tile.sprites["camel"][Player.playerIndex[self.camel]], (Tile.size / 4, Tile.size / 4))
+			display.blit(sprite, (x + Tile.size * 7/10, y + Tile.size * 1/10))
 
 		# reward
 		if self.reward == "palm":
@@ -64,7 +74,7 @@ class Tile:
 			display.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
 
 		# meeples
-		cX = Tile.size * 1/4
+		cX = Tile.size * 1/8
 		cY = Tile.size * 1/4
 		for meep in range(5):
 			for stack in range(self.meeples[meep]):
@@ -72,17 +82,27 @@ class Tile:
 				sprite = pygame.transform.scale(Tile.sprites["meeple"][meep], (Tile.size / 4, Tile.size / 4))
 				display.blit(sprite, (x + cX - Tile.size / 8, y + cY - Tile.size / 8))
 				cX += Tile.size * 1/4
-				if cX >= Tile.size:
-					cX = Tile.size * 1/4
+				if cX >= Tile.size * 7/8:
+					cX = cX - Tile.size * 6/8
 					cY += Tile.size * 1/4
 					if cY >= Tile.size:
-						cX = Tile.size * 3/8
+						cX = cX + Tile.size * 1/8
 						cY = Tile.size * 3/8
 
 #==============================================================================
 
 
 class Player:
+	availablePlayers = \
+		[["orange" , (243,155, 99)],\
+		 ["blue"   , ( 53,191,204)],\
+		 ["black"  , (100,100,100)],\
+		 ["pink"   , (242,146,188)],]
+	playerIndex = {
+		"orange":0,
+		"blue"  :1,
+		"black" :2,
+		"pink"  :3,}
 	def __init__(self, name):
 		self.name = name
 		self.coin = 0                   # current savings
@@ -153,15 +173,6 @@ class Board:
 	width = 6
 	height = 5
 	tileSpacing = 10
-	availableTiles = \
-		[('blue', 5 , 'village')] * 5 + \
-		[('blue', 6 , 'djinn')  ] * 4 + \
-		[('blue', 10, 'djinn')  ]     + \
-		[('blue', 12, 'djinn')  ]     + \
-		[('blue', 15, 'djinn')  ]     + \
-		[('red', 4, 'l_market') ] * 4 + \
-		[('red', 6, 's_market') ] * 8 + \
-		[('red', 8, 'palm')     ] * 6
 	availableTiles_histo = \
 		[[5, 'blue',  5, 'village' ]] + \
 		[[4, 'blue',  6, 'djinn'   ]] + \
@@ -219,8 +230,6 @@ class Board:
 						xy_pairs = xy_pairs + [(x + scanx, y - scany)]
 					if scanx != 0 and scany !=0:
 						xy_pairs = xy_pairs + [(x - scanx, y - scany)]
-		if (radius + 1) % 2 == 0 and radius > 3:
-			xy_pairs = xy_pairs + [(x, y)]
 
 		# clean up pairs
 		retval = []
@@ -244,22 +253,29 @@ class Board:
 						retval = retval + 1
 		return retval
 
-	def resolveTile(self, player, deck, tile = [], meeples = []):
+	def resolveTile(self, player, deck, src = [], tile = [], meeples = []):
 		x = tile[0]
 		y = tile[1]
 		targetTile = self.tiles[x][y]     # landing tile
 		results = [0,0,0,0,0]             # scores per color
 		isValidMove = [False,False,False,False,False]
+		looping = [0,0,0,0,0]
+
+		# looping
+		for x in range(5):
+			if meeples[x] > 1 and (abs(src[0] - tile[0]) + abs(src[1] - tile[1])) <= sum(meeples) - 4:
+				looping[x] = looping[x] + 1
+
 
 		#======================================================================
 		#--- red ---
-		if meeples[0] > 0 and targetTile.meeples[0] > 0:
+		if meeples[0] > 0 and (targetTile.meeples[0] + looping[0]) > 0:
 			isValidMove[0] = True
 
 		#======================================================================
 		#--- green ---
-		if meeples[1] > 0 and targetTile.meeples[1] > 0:
-			cardsToTake = targetTile.meeples[1] + 1
+		if meeples[1] > 0 and (targetTile.meeples[1] + looping[1]) > 0:
+			cardsToTake = (targetTile.meeples[1] + looping[1]) + 1
 			maxReturn = 0
 			if len(deck.stack) > 0:
 				# generate card options
@@ -279,20 +295,20 @@ class Board:
 
 		#======================================================================
 		#--- blue ---
-		if meeples[2] > 0 and targetTile.meeples[2] > 0:
-			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + targetTile.meeples[2] + int(player.useSlaves) * player.slaves)
+		if meeples[2] > 0 and (targetTile.meeples[2] + looping[2]) > 0:
+			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + (targetTile.meeples[2] + looping[2]) + int(player.useSlaves) * player.slaves)
 			isValidMove[2] = True
 
 		#======================================================================
 		#--- white ---
-		if meeples[3] > 0 and targetTile.meeples[3] > 0:
-			results[3] = (1 + targetTile.meeples[3]) * player.whiteMeepleValue
+		if meeples[3] > 0 and (targetTile.meeples[3] + looping[3]) > 0:
+			results[3] = (1 + (targetTile.meeples[3] + looping[3])) * player.whiteMeepleValue
 			isValidMove[3] = True
 
 		#======================================================================
 		#--- yellow ---
-		if meeples[4] > 0 and targetTile.meeples[4] > 0:
-			results[4] = (1 + targetTile.meeples[4]) * player.yellowMeepleValue
+		if meeples[4] > 0 and (targetTile.meeples[4] + looping[4]) > 0:
+			results[4] = (1 + (targetTile.meeples[4] + looping[4])) * player.yellowMeepleValue
 			isValidMove[4] = True
 		
 		#======================================================================
@@ -311,9 +327,9 @@ class Board:
 
 		return results
 
-	def getResults_tile(self, player, deck, tiles = [], meeples = []):
+	def getResults_tile(self, player, deck, src = [], tiles = [], meeples = []):
 		retval = []
-		results = [self.resolveTile(player, deck, tile, meeples) + [tile[0], tile[1]] for tile in tiles]
+		results = [self.resolveTile(player, deck, src, tile, meeples) + [tile[0], tile[1]] for tile in tiles]
 		for tile in results:
 			for x in range(5):
 				retval = retval + [[tile[x], Tile.meepleColorText[x], (tile[5], tile[6])]]
@@ -325,7 +341,7 @@ class Board:
 		for scanx in range(self.width):
 			for scany in range(self.height):
 				tiles = self.getResolvableTiles(x=scanx, y=scany, radius= sum(self.tiles[scanx][scany].meeples) + 1)
-				results = self.getResults_tile(player=player, deck = deck, tiles=tiles, meeples=self.tiles[scanx][scany].meeples)
+				results = self.getResults_tile(player=player, deck = deck, src=[scanx, scany], tiles=tiles, meeples=self.tiles[scanx][scany].meeples)
 				for res in results:
 					res.insert(2, (scanx, scany))
 					retval = retval + [res]
