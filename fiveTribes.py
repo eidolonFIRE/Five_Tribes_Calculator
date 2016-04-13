@@ -3,7 +3,7 @@ import math
 import random
 import os
 from fiveTribes_sim import Tile, Board, Player, Deck
-from gui import GUI
+from gui import GUI, Button, List, ValueBox, CheckBox
 
 # Manual
 # http://cdn0.daysofwonder.com/five-tribes/en/img/ft_rules_en.pdf
@@ -74,26 +74,27 @@ def cards_incr(index = 0):
 	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
 	myGui.objects["cards_player"].text = [" Value: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))]
 
+def setSlaves(value = 0):
+	global myPlayer
+	myPlayer.slaves = value
 
 
 
 def mode_deck():
-	myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
-	myGui.objects["deck"].text = myDeck.stack
+	myGui.objects["deckAdd"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
+	myGui.objects["deck"].text = [deckText.format(text = x) for x in myDeck.stack]
 	myGui.mode = "deck"
 
-def deck_decr(index = 0):
-	if len(myDeck.stack) > 0 and Deck.availableCards_histo[index][1] in myDeck.stack:
-		myDeck.stack.remove(Deck.availableCards_histo[index][1])
-		myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
-		myGui.objects["deck"].text = myDeck.stack
-
-def deck_incr(index = 0):
+def deckAdd(index = 0):
 	if len(myDeck.stack) < 9:
-		myDeck.stack = myDeck.stack + [Deck.availableCards_histo[index][1]]
-		myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
-		myGui.objects["deck"].text = myDeck.stack
+		myDeck.stack = myDeck.stack + [myDeck.availableCards_histo[index][1]]
+		myDeck.availableCards_histo[index][0] = myDeck.availableCards_histo[index][0] - 1
+		myGui.objects["deckAdd"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
+		myGui.objects["deck"].text = [deckText.format(text = x) for x in myDeck.stack]
 
+def deckPop(index = 0):
+	myDeck.stack.pop(index)
+	myGui.objects["deck"].text = [deckText.format(text = x) for x in myDeck.stack]
 
 
 
@@ -115,6 +116,11 @@ def mode_solve():
 		textResults = textResults + [result]
 		#print result
 	myGui.objects["results"].text = textResults
+
+def setUseSlaves(value = False):
+	global myPlayer
+	myPlayer.useSlaves = value
+	mode_solve()
 
 def selectResult(x = 0):
 	global solvedResults
@@ -198,9 +204,10 @@ def colorize(image, newColor):
 #------------------------------------------------------------------------------
 
 
-resultText = "{score:>2} {color:6} {sx:1},{sy:1} --> {tx:1},{ty:1}"
-tileText = "{remaining:1}) {color:4} {value:>2} {reward:8}"
-cardText = "{remaining:1}) {card:7}"
+resultText = " {score:>2} {color:6} {sx:1},{sy:1} > {tx:1},{ty:1}"
+tileText = " {remaining:1}) {color:4} {value:>2} {reward:8}"
+cardText = " {remaining:1}) {card:7}"
+deckText = " {text:9} X"
 
 pygame.init()
 myDisplay = pygame.display.set_mode((1000,700))
@@ -227,34 +234,35 @@ Tile.sprites["palace"] = colorize(pygame.image.load(os.path.join('images', 'pala
 
 
 # main buttons
-myGui.addButton("modeEdit", (660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["all"])
-myGui.addButton("modeSolve", (730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
+myGui.objects["modeEdit"]  = Button((660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["all"])
+myGui.objects["modeSolve"] = Button((730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
 
 # solve mode
-myGui.addList("results", (660, 40, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
+myGui.objects["results"]           = List((660, 70, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
+myGui.objects["player_useSlaves"]  = CheckBox((660, 40, 160, 20), False, (100,100,100), "Use Slaves", 20, setUseSlaves, ["solve"])
+
 
 # edit mode
-myGui.addButton("clearTile", (660, 40, 100, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["edit"])
-myGui.addList("tiles", (660, 200, 250, 180), (250, 250, 250), ["..."], 20, selectTile, ["edit"])
-myGui.addValueBox("reds"   , (660,  70, 100, 20), (255,100,100), (0,10), 20, setReds, ["edit"])
-myGui.addValueBox("greens" , (660,  95, 100, 20), (100,255,100), (0,10), 20, setGreens, ["edit"])
-myGui.addValueBox("blues"  , (660, 120, 100, 20), (100,100,255), (0,10), 20, setBlues, ["edit"])
-myGui.addValueBox("whites" , (660, 145, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
-myGui.addValueBox("yellows", (660, 170, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
+myGui.objects["clearTile"] = Button((660, 40, 100, 25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["edit"])
+myGui.objects["tiles"]     = List((660, 200, 250, 180), (250, 250, 250), ["..."], 20, selectTile, ["edit"])
+myGui.objects["reds"]      = ValueBox((660,  70, 100, 20), (255,100,100), (0,10), 20, setReds, ["edit"])
+myGui.objects["greens"]    = ValueBox((660,  95, 100, 20), (100,255,100), (0,10), 20, setGreens, ["edit"])
+myGui.objects["blues"]     = ValueBox((660, 120, 100, 20), (100,100,255), (0,10), 20, setBlues, ["edit"])
+myGui.objects["whites"]    = ValueBox((660, 145, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
+myGui.objects["yellows"]   = ValueBox((660, 170, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
 
 # cards mode
-myGui.addButton("modeCards", (800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
-myGui.addList("cards_player_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["cards"])
-myGui.addList("cards_player_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["cards"])
-myGui.addList("cards_player", (660, 170, 160, 40), (250, 250, 250), ["..."], 20, cards_incr, ["cards"])
-
+myGui.objects["modeCards"]         = Button((800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
+myGui.objects["cards_player_decr"] = List((660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["cards"])
+myGui.objects["cards_player_incr"] = List((740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["cards"])
+myGui.objects["cards_player"]      = List((660, 170, 160, 40), (250, 250, 250), ["..."], 20, cards_incr, ["cards"])
+myGui.objects["label_slaves"]      = Button((660, 110, 160, 20), (100, 100, 100), "Slave Cards", 20, "rect", None, ["cards"])
+myGui.objects["player_slaves"]     = ValueBox((660, 130, 160, 20), (100,100,100), (0, 10), 20, setSlaves, ["cards"])
 
 # deck mode
-myGui.addButton("modeDeck", (870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
-myGui.addList("deck_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, deck_decr, ["deck"])
-myGui.addList("deck_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, deck_incr, ["deck"])
-#myGui.addList("deck", (660, 410, 160, 200), (250, 250, 250), ["..."], 20, None, ["deck"])
-
+myGui.objects["modeDeck"]  = Button((870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
+myGui.objects["deckAdd"]   = List((660, 100, 160, 200), (250, 250, 250), ["..."], 20, deckAdd, ["deck"])
+myGui.objects["deck"]      = List((660, 310, 160, 200), (250, 250, 250), ["..."], 20, deckPop, ["deck"])
 
 
 

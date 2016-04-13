@@ -93,6 +93,8 @@ class Player:
 		self.whiteMeepleValue = 2
 		self.villageValue = 5
 		self.palmValue = 3
+		self.useSlaves = False
+		self.slaves = 0                 # accumulated slave cards
 		self.cardValue = [0, 1, 3, 7, 13, 21, 30, 40, 50, 60]
 		self.cards_histo = [
 			[0, "ivory"],
@@ -235,8 +237,8 @@ class Board:
 
 	def countAdjacentBlueTiles(self, x, y):
 		retval = 0
-		for scanx in range(x-1, x+1):
-			for scany in range(y-1, y+1):
+		for scanx in range(x-1, x+2):
+			for scany in range(y-1, y+2):
 				if self.checkInBounds(scanx, scany) == 1:
 					if self.tiles[scanx][scany].color == "blue":
 						retval = retval + 1
@@ -278,7 +280,7 @@ class Board:
 		#======================================================================
 		#--- blue ---
 		if meeples[2] > 0 and targetTile.meeples[2] > 0:
-			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + targetTile.meeples[2])
+			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + targetTile.meeples[2] + int(player.useSlaves) * player.slaves)
 			isValidMove[2] = True
 
 		#======================================================================
@@ -293,6 +295,7 @@ class Board:
 			results[4] = (1 + targetTile.meeples[4]) * player.yellowMeepleValue
 			isValidMove[4] = True
 		
+		#======================================================================
 		# tile value / village / palm tree
 		bonus = 0
 		if targetTile.camel == "none":
