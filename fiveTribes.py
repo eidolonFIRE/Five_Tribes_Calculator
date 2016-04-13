@@ -2,6 +2,7 @@ import pygame
 import math
 import random
 import os
+from fiveTribes_sim import Tile, Board, Player, Deck
 from gui import GUI
 
 # Manual
@@ -46,274 +47,6 @@ from gui import GUI
 
 
 
-#==============================================================================
-
-
-class Tile:
-	meepleColor = [
-					(240,  0,  0),
-					(0  ,230,  0),
-					(0  ,  0,250),
-					(250,250,250),
-					(240,240,  0),  ]
-	meepleColorText = [
-					"red",
-					"green",
-					"blue",
-					"white",
-					"yellow",  ]
-	size = 100
-
-	def __init__(self, setup = ('none',0,'none')):
-		#               r,g,b,w,y
-		#self.meeples = [random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3)]
-		self.meeples = [0,0,0,0,0]
-		self.color = setup[0]        
-		self.value = setup[1]                  # victory point worth of the tile
-		self.reward = setup[2]
-		self.palmTrees = 0                     # accumulated palm trees
-		self.village = 0                       # accumulated village
-		self.camel = 'none'                    # 'me', 'other'
-
-
-	def draw(self, x, y, option = "none"):
-		# background
-		if option == "highlight_white":
-			pygame.draw.rect(myDisplay, (255, 255, 255), [x,y,Tile.size,Tile.size], 5)
-			pygame.draw.rect(myDisplay, (170, 170, 170), [x,y,Tile.size,Tile.size])
-		if option == "highlight_red":
-			pygame.draw.rect(myDisplay, (255, 0, 0), [x,y,Tile.size,Tile.size], 10)
-			pygame.draw.rect(myDisplay, (200, 140, 140), [x,y,Tile.size,Tile.size])
-		if option == "none":
-			if self.value > 0:
-				pygame.draw.rect(myDisplay, (100, 100, 100), [x,y,Tile.size,Tile.size])
-			else:
-				# for blank tile just draw grey circle
-				pygame.draw.circle(myDisplay, (20, 20, 20), [x + Tile.size/2,y+Tile.size/2], Tile.size * 1/2)
-		if self.color == 'blue':
-			pygame.draw.circle(myDisplay, (150,150,240), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
-		if self.color == 'red':
-			pygame.draw.circle(myDisplay, (240,150,150), [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
-		# draw tile value text
-		font = pygame.font.Font(None, Tile.size * 1/5)
-		text = font.render(str(self.value), 1, (10,10,10))
-		textpos = (
-			-text.get_rect().center[0] + x + Tile.size * 9/10, 
-			-text.get_rect().center[1] + y + Tile.size * 1/10)
-		myDisplay.blit(text, textpos)
-
-		# reward
-		if self.reward == "palm":
-			sprite = pygame.transform.scale(myGui.sprites["palm"], (Tile.size / 4, Tile.size / 4))
-			myDisplay.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
-		if self.reward == "village":
-			sprite = pygame.transform.scale(myGui.sprites["palace"], (Tile.size / 4, Tile.size / 4))
-			myDisplay.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
-
-		# meeples
-		cX = Tile.size * 1/4
-		cY = Tile.size * 1/4
-		for meep in range(5):
-			for stack in range(self.meeples[meep]):
-				#pygame.draw.circle(myDisplay, Tile.meepleColor[meep],   [x + cX, y + cY], Tile.size / 8)
-				sprite = pygame.transform.scale(myGui.sprites["meeple"][meep], (Tile.size / 4, Tile.size / 4))
-				myDisplay.blit(sprite, (x + cX - Tile.size / 8, y + cY - Tile.size / 8))
-				cX += Tile.size * 1/4
-				if cX >= Tile.size:
-					cX = Tile.size * 1/4
-					cY += Tile.size * 1/4
-					if cY >= Tile.size:
-						cX = Tile.size * 3/8
-						cY = Tile.size * 3/8
-
-#==============================================================================
-
-
-class Player:
-	def __init__(self, name):
-		self.name = name
-		self.coin = 0                   # current savings
-		self.camels = 9                 # camels remaining
-		self.whiteMeeples = 0           # accumulated white meeples
-		self.yellowsMeeples = 0         # accumulated yellow meeples
-		self.yellowMeepleValue = 1
-		self.whiteMeepleValue = 2
-		self.villageValue = 5
-		self.palmValue = 3
-		self.cardValue = [0, 1, 3, 7, 13, 21, 30, 40, 50, 60]
-
-#==============================================================================
-
-
-class Deck:
-	availableCards = \
-	["ivory", "jewels", "gold"]  * 2 + \
-	["papyrus", "silk", "spice"] * 4 + \
-	["fish", "wheat", "pottery"] * 6
-
-
-#==============================================================================
-
-
-class Board:
-	width = 6
-	height = 5
-	tileSpacing = 10
-	availableTiles = \
-		[('blue', 5 , 'village')] * 5 + \
-		[('blue', 6 , 'djinn')  ] * 4 + \
-		[('blue', 10, 'djinn')  ]     + \
-		[('blue', 12, 'djinn')  ]     + \
-		[('blue', 15, 'djinn')  ]     + \
-		[('red', 4, 'l_market') ] * 4 + \
-		[('red', 6, 's_market') ] * 8 + \
-		[('red', 8, 'palm')     ] * 6
-	availableTiles_histo = \
-		[[5, 'blue',  5, 'village' ]] + \
-		[[4, 'blue',  6, 'djinn'   ]] + \
-		[[1, 'blue', 10, 'djinn'   ]] + \
-		[[1, 'blue', 12, 'djinn'   ]] + \
-		[[1, 'blue', 15, 'djinn'   ]] + \
-		[[4, 'red' ,  4, 'l_market']] + \
-		[[8, 'red' ,  6, 's_market']] + \
-		[[6, 'red' ,  8, 'palm'    ]]
-	availableMeeples_histo = [18,18,18,20,16]
-	availablePalms = 12
-	availablePalaces = 10
-
-	def __init__(self):
-		self.tiles = [[Tile() for j in range(Board.height)] for i in range(Board.width)]
-
-	def draw(self, highlights_white = [], highlights_red = []):
-		for x in range(Board.width):
-			for y in range(Board.height):
-				option = "none"
-				if (x, y) in highlights_white:
-					option = "highlight_white"
-				if (x, y) in highlights_red:
-					option = "highlight_red"
-				self.tiles[x][y].draw(
-					x = x * (Tile.size + Board.tileSpacing), 
-					y = y * (Tile.size + Board.tileSpacing),
-					option = option)
-
-	def clearTile(self, pos):
-		self.tiles[pos[0]][pos[1]] = Tile()
-
-	def getTileChord(self, pos):
-		return (pos[0] / (Tile.size + self.tileSpacing), pos[1] / (Tile.size + self.tileSpacing))
-
-	def clickTile(self, tileX, tileY):
-		retval = 0
-		# if selection is within bounds
-		if tileX >= 0 and tileX < Board.width and tileY >= 0 and tileY < Board.height:
-			retval = self.getResolvableTiles(x=tileX, y=tileY, radius= sum(self.tiles[tileX][tileY].meeples) + 1)
-		return retval
-
-	def getResolvableTiles(self, x = 0, y = 0, radius = 0):
-		xy_pairs = []
-		
-		for scanx in range(0, radius):
-			for scany in range(0, radius):
-				if scanx == 0 and scany == 0:
-					continue
-				if (scanx + scany + radius + 1) % 2 == 0 and (scanx + scany) <= radius:
-					xy_pairs = xy_pairs + [(x + scanx, y + scany)]
-					if scanx != 0:
-						xy_pairs = xy_pairs + [(x - scanx, y + scany)]
-					if scany != 0:
-						xy_pairs = xy_pairs + [(x + scanx, y - scany)]
-					if scanx != 0 and scany !=0:
-						xy_pairs = xy_pairs + [(x - scanx, y - scany)]
-		if (radius + 1) % 2 == 0 and radius > 3:
-			xy_pairs = xy_pairs + [(x, y)]
-
-		# clean up pairs
-		retval = []
-		for pair in xy_pairs:
-			if self.checkInBounds(pair[0], pair[1]) == 1:
-				retval = retval + [pair]
-		return retval
-
-	def checkInBounds(self, x, y):
-		if x >= 0 and x < self.width and y >= 0 and y < self.height:
-			return 1
-		else:
-			return 0
-
-	def countAdjacentBlueTiles(self, x, y):
-		retval = 0
-		for scanx in range(x-1, x+1):
-			for scany in range(y-1, y+1):
-				if self.checkInBounds(scanx, scany) == 1:
-					if self.tiles[scanx][scany].color == "blue":
-						retval = retval + 1
-		return retval
-
-	def resolveTile(self, player, tile = [], meeples = []):
-		x = tile[0]
-		y = tile[1]
-		targetTile = self.tiles[x][y]     # landing tile
-		results = [0,0,0,0,0]             # scores per color
-		isValidMove = [False,False,False,False,False]
-		#--- red ---
-		if meeples[0] > 0 and targetTile.meeples[0] > 0:
-			isValidMove[0] = True
-		#--- green ---
-		if meeples[1] > 0 and targetTile.meeples[1] > 0:
-			isValidMove[1] = True
-		#--- blue ---
-		if meeples[2] > 0 and targetTile.meeples[2] > 0:
-			results[2] = self.countAdjacentBlueTiles(x, y) * (1 + targetTile.meeples[2])
-			isValidMove[2] = True
-		#--- white ---
-		if meeples[3] > 0 and targetTile.meeples[3] > 0:
-			results[3] = (1 + targetTile.meeples[3]) * player.whiteMeepleValue
-			isValidMove[3] = True
-		#--- yellow ---
-		if meeples[4] > 0 and targetTile.meeples[4] > 0:
-			results[4] = (1 + targetTile.meeples[4]) * player.yellowMeepleValue
-			isValidMove[4] = True
-		
-		# tile value / village / palm tree
-		bonus = 0
-		if targetTile.camel == "none":
-			bonus = bonus + targetTile.value
-		if targetTile.camel == "none" or targetTile.camel == player.name:
-			if targetTile.reward == "palm":
-				bonus = bonus + player.palmValue
-			if targetTile.reward == "village":
-				bonus = bonus + player.villageValue
-		for x in range(5):
-			if isValidMove[x]:
-				results[x] = results[x] + bonus
-
-		return results
-
-	def getResults_tile(self, player, tiles = [], meeples = []):
-		retval = []
-		results = [self.resolveTile(player, tile, meeples) + [tile[0], tile[1]] for tile in tiles]
-		for tile in results:
-			for x in range(5):
-				retval = retval + [[tile[x], Tile.meepleColorText[x], (tile[5], tile[6])]]
-		#return sorted(retval, key= lambda tup: tup[0], reverse= True)
-		return retval
-
-	def getResults_board(self, player):
-		retval = []
-		for scanx in range(self.width):
-			for scany in range(self.height):
-				tiles = self.getResolvableTiles(x=scanx, y=scany, radius= sum(self.tiles[scanx][scany].meeples) + 1)
-				results = self.getResults_tile(player=player, tiles=tiles, meeples=self.tiles[scanx][scany].meeples)
-				for res in results:
-					res.insert(2, (scanx, scany))
-					retval = retval + [res]
-
-		return sorted(retval, key= lambda tup: tup[0], reverse= True)
-
-
-#==============================================================================
-
 
 
 
@@ -321,6 +54,47 @@ class Board:
 #    Global handlers
 #
 #------------------------------------------------------------------------------
+
+def mode_cards():
+	global myPlayer
+	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+	myGui.mode = "cards"
+
+def cards_decr(index = 0):
+	global myPlayer
+	if myPlayer.cards_histo[index][0] > 0:
+		myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] - 1
+		myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+		print "card score: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))
+
+def cards_incr(index = 0):
+	global myPlayer
+	myPlayer.cards_histo[index][0] = myPlayer.cards_histo[index][0] + 1
+	myGui.objects["cards_player_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myPlayer.cards_histo]
+	print "card score: " + str(myPlayer.calcCardValue(myPlayer.cards_histo))
+
+
+
+
+def mode_deck():
+	myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
+	myGui.objects["deck"].text = myDeck.stack
+	myGui.mode = "deck"
+
+def deck_decr(index = 0):
+	if len(myDeck.stack) > 0 and Deck.availableCards_histo[index][1] in myDeck.stack:
+		myDeck.stack.remove(Deck.availableCards_histo[index][1])
+		myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
+		myGui.objects["deck"].text = myDeck.stack
+
+def deck_incr(index = 0):
+	if len(myDeck.stack) < 9:
+		myDeck.stack = myDeck.stack + [Deck.availableCards_histo[index][1]]
+		myGui.objects["deck_decr"].text = [cardText.format(remaining = x[0], card = x[1]) for x in myDeck.availableCards_histo]
+		myGui.objects["deck"].text = myDeck.stack
+
+
+
 
 def mode_edit():
 	global highlights_white
@@ -333,12 +107,12 @@ def mode_solve():
 	textResults = []
 	myGui.mode = "solve"
 	global solvedResults
-	solvedResults = myBoard.getResults_board(myPlayer)
-	print "--- board results ---"
+	solvedResults = myBoard.getResults_board(myPlayer, myDeck)
+	#print "--- board results ---"
 	for x in solvedResults[0:20]:
 		result = resultText.format(score=x[0], color=x[1], sx=x[2][0], sy=x[2][1], tx=x[3][0], ty=x[3][1])
 		textResults = textResults + [result]
-		print result
+		#print result
 	myGui.objects["results"].text = textResults
 
 def selectResult(x = 0):
@@ -416,6 +190,7 @@ def colorize(image, newColor):
 	image.set_colorkey((0,0,0))
 	return image
 
+
 #==============================================================================
 #    Init
 #
@@ -424,6 +199,7 @@ def colorize(image, newColor):
 
 resultText = "{score:>2} {color:6} {sx:1},{sy:1} --> {tx:1},{ty:1}"
 tileText = "{remaining:1}) {color:4} {value:>2} {reward:8}"
+cardText = "{remaining:1}) {card:7}"
 
 pygame.init()
 myDisplay = pygame.display.set_mode((1000,700))
@@ -433,6 +209,8 @@ simExit = False
 myGui = GUI(myDisplay)
 myBoard = Board()
 myPlayer = Player("Player1")
+myDeck = Deck()
+
 selectedTile = (0,0)
 highlights_white = []
 highlights_red = []
@@ -442,14 +220,14 @@ solvedResults = []
 meepSprites = []
 for meep in range(5):
 	meepSprites = meepSprites + [colorize(pygame.image.load(os.path.join('images', 'meeple_masked.png')), Tile.meepleColor[meep] )]
-myGui.sprites["meeple"] = meepSprites
-myGui.sprites["palm"] = colorize(pygame.image.load(os.path.join('images', 'palm_masked.png')), (255,255,255))
-myGui.sprites["palace"] = colorize(pygame.image.load(os.path.join('images', 'palace_masked.png')), (255,255,255))
+Tile.sprites["meeple"] = meepSprites
+Tile.sprites["palm"] = colorize(pygame.image.load(os.path.join('images', 'palm_masked.png')), (255,255,255))
+Tile.sprites["palace"] = colorize(pygame.image.load(os.path.join('images', 'palace_masked.png')), (255,255,255))
 
 
 # main buttons
-myGui.addButton("modeEdit", (660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["edit", "solve"])
-myGui.addButton("modeSolve", (730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["edit", "solve"])
+myGui.addButton("modeEdit", (660, 10, 60, 25), (150,150,150), "Edit", 20, "rect", mode_edit, ["all"])
+myGui.addButton("modeSolve", (730, 10, 60, 25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
 
 # solve mode
 myGui.addList("results", (660, 40, 250, 500), (250, 250, 250), solvedResults, 20, selectResult, ["solve"])
@@ -463,12 +241,25 @@ myGui.addValueBox("blues"  , (660, 120, 100, 20), (100,100,255), (0,10), 20, set
 myGui.addValueBox("whites" , (660, 145, 100, 20), (255,255,255), (0,10), 20, setWhites, ["edit"])
 myGui.addValueBox("yellows", (660, 170, 100, 20), (255,242,  0), (0,10), 20, setYellows, ["edit"])
 
+# cards mode
+myGui.addButton("modeCards", (800, 10, 60, 25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
+myGui.addList("cards_player_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, cards_decr, ["cards"])
+myGui.addList("cards_player_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, cards_incr, ["cards"])
+
+# deck mode
+myGui.addButton("modeDeck", (870, 10, 60, 25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
+myGui.addList("deck_decr", (660, 200, 80, 200), (250, 250, 250), ["..."], 20, deck_decr, ["deck"])
+myGui.addList("deck_incr", (740, 200, 80, 200), (250, 250, 250), ["","","","","","","","",""], 20, deck_incr, ["deck"])
+myGui.addList("deck", (660, 410, 160, 200), (250, 250, 250), ["..."], 20, None, ["deck"])
+
+
+
+
 
 #==============================================================================
 #    Main loop
 #
 #------------------------------------------------------------------------------
-
 
 while not simExit:
 	event = pygame.event.wait()
@@ -491,7 +282,7 @@ while not simExit:
 			myGui.objects["tiles"].text = [tileText.format(remaining=x[0], color=x[1], value=x[2], reward=x[3]) for x in Board.availableTiles_histo]
 
 		myDisplay.fill((0,0,0))
-		myBoard.draw(highlights_white = highlights_white, highlights_red = highlights_red)
+		myBoard.draw(myDisplay, highlights_white = highlights_white, highlights_red = highlights_red)
 		myGui.draw()
 		pygame.display.update()
 

@@ -112,7 +112,7 @@ class GUI:
 		self.sprites = {}
 	def draw(self):
 		for key in self.objects:
-			if self.mode in self.objects[key].layers:
+			if self.mode in self.objects[key].layers or "all" in self.objects[key].layers:
 				self.objects[key].draw(self.display)
 	def addButton(self, name, rect, color, text, size, shape, method_click, layers):
 		self.objects[name] = Button(rect, color, text, size, shape, method_click, layers)
@@ -122,7 +122,7 @@ class GUI:
 		self.objects[name] = ValueBox(rect, color, limit, textSize, handler, layers)
 	def mouseDown(self, pos):
 		for key in self.objects:
-			if self.mode in self.objects[key].layers:
+			if self.mode in self.objects[key].layers or "all" in self.objects[key].layers:
 				if pos[0] > self.objects[key].x \
 				and pos[0] < self.objects[key].x + self.objects[key].w \
 				and pos[1] > self.objects[key].y \
