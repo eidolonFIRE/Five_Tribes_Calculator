@@ -48,7 +48,7 @@ class List:
 		font = pygame.font.SysFont("monospace", self.size, bold = True)
 		for line in self.text:
 			text = None
-			if isinstance(line, list):
+			if isinstance(line, list):    # support individual line color
 				text = font.render(line[0], 1, line[1])
 			else:
 				text = font.render(line, 1, self.color)
@@ -59,7 +59,7 @@ class List:
 		if self.handler != None:
 			index = (int(pos[1] - self.y - self.size / 2) / self.size)
 			if index < len(self.text) and index >= 0:
-				self.handler(index)
+				self.handler(index, pos[0] - self.x - self.w/2)
 
 #==============================================================================
 
@@ -111,7 +111,7 @@ class ValueBox:
 #==============================================================================
 
 class CheckBox:
-	def __init__(self, rect, isChecked, color, text, textSize, handler, layers):
+	def __init__(self, rect, color, isChecked, text, textSize, handler, layers):
 		self.x = rect[0]
 		self.y = rect[1]
 		self.w = rect[2]

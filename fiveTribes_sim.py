@@ -63,7 +63,7 @@ class Tile:
 		# owner (camel)
 		if self.camel != "none":
 			sprite = pygame.transform.scale(Tile.sprites["camel"][Player.playerIndex[self.camel]], (Tile.size / 4, Tile.size / 4))
-			display.blit(sprite, (x + Tile.size * 7/10, y + Tile.size * 1/10))
+			display.blit(sprite, (x + Tile.size * 7/10, y + Tile.size * 7/10))
 
 		# reward
 		if self.reward == "palm":
@@ -105,6 +105,7 @@ class Player:
 		"pink"  :3,}
 	def __init__(self, name):
 		self.name = name
+		self.color = "none"
 		self.coin = 0                   # current savings
 		self.camels = 9                 # camels remaining
 		self.whiteMeeples = 0           # accumulated white meeples
@@ -117,15 +118,15 @@ class Player:
 		self.slaves = 0                 # accumulated slave cards
 		self.cardValue = [0, 1, 3, 7, 13, 21, 30, 40, 50, 60]
 		self.cards_histo = [
-			[0, "ivory"],
-			[0, "jewels"],
-			[0, "gold"],
-			[0, "papyrus"],
-			[0, "silk"],
-			[0, "spice"],
-			[0, "fish"],
-			[0, "wheat"],
-			[0, "pottery"]]
+			[0, "ivory"   ],
+			[0, "jewels"  ],
+			[0, "gold"    ],
+			[0, "papyrus" ],
+			[0, "silk"    ],
+			[0, "spice"   ],
+			[0, "fish"    ],
+			[0, "wheat"   ],
+			[0, "pottery" ], ]
 	def calcCardValue(self, cards_histo = []):
 		retval = 0
 		flag_done = False
@@ -154,15 +155,15 @@ class Deck:
 		["papyrus", "silk", "spice"] * 4 + \
 		["fish", "wheat", "pottery"] * 6
 	availableCards_histo = [
-		[2, "ivory"],
-		[2, "jewels"],
-		[2, "gold"],
-		[4, "papyrus"],
-		[4, "silk"],
-		[4, "spice"],
-		[6, "fish"],
-		[6, "wheat"],
-		[6, "pottery"]]
+		[2, "ivory"   ],
+		[2, "jewels"  ],
+		[2, "gold"    ],
+		[4, "papyrus" ],
+		[4, "silk"    ],
+		[4, "spice"   ],
+		[6, "fish"    ],
+		[6, "wheat"   ],
+		[6, "pottery" ], ]
 	def __init__(self):
 		self.stack = []
 
@@ -173,15 +174,15 @@ class Board:
 	width = 6
 	height = 5
 	tileSpacing = 10
-	availableTiles_histo = \
-		[[5, 'blue',  5, 'village' ]] + \
-		[[4, 'blue',  6, 'djinn'   ]] + \
-		[[1, 'blue', 10, 'djinn'   ]] + \
-		[[1, 'blue', 12, 'djinn'   ]] + \
-		[[1, 'blue', 15, 'djinn'   ]] + \
-		[[4, 'red' ,  4, 'l_market']] + \
-		[[8, 'red' ,  6, 's_market']] + \
-		[[6, 'red' ,  8, 'palm'    ]]
+	availableTiles_histo = [
+		[5, 'blue',  5, 'village' ],
+		[4, 'blue',  6, 'djinn'   ],
+		[1, 'blue', 10, 'djinn'   ],
+		[1, 'blue', 12, 'djinn'   ],
+		[1, 'blue', 15, 'djinn'   ],
+		[4, 'red' ,  4, 'l_market'],
+		[8, 'red' ,  6, 's_market'],
+		[6, 'red' ,  8, 'palm'    ],]
 	availableMeeples_histo = [18,18,18,20,16]
 	availablePalms = 12
 	availablePalaces = 10
@@ -217,7 +218,6 @@ class Board:
 
 	def getResolvableTiles(self, x = 0, y = 0, radius = 0):
 		xy_pairs = []
-		
 		for scanx in range(0, radius):
 			for scany in range(0, radius):
 				if scanx == 0 and scany == 0:
@@ -230,7 +230,6 @@ class Board:
 						xy_pairs = xy_pairs + [(x + scanx, y - scany)]
 					if scanx != 0 and scany !=0:
 						xy_pairs = xy_pairs + [(x - scanx, y - scany)]
-
 		# clean up pairs
 		retval = []
 		for pair in xy_pairs:
@@ -257,9 +256,9 @@ class Board:
 		x = tile[0]
 		y = tile[1]
 		targetTile = self.tiles[x][y]     # landing tile
-		results = [0,0,0,0,0]             # scores per color
-		isValidMove = [False,False,False,False,False]
-		looping = [0,0,0,0,0]
+		results = [0] * 5                 # scores per color
+		isValidMove = [False] * 5         # valid move for this color
+		looping = [0] * 5                 # aditional looped meeples
 
 		# looping
 		for x in range(5):
@@ -316,15 +315,12 @@ class Board:
 		bonus = 0
 		if targetTile.camel == "none":
 			bonus = bonus + targetTile.value
-		if targetTile.camel == "none" or targetTile.camel == player.name:
+		if targetTile.camel == "none" or targetTile.camel == player.color:
 			if targetTile.reward == "palm":
 				bonus = bonus + player.palmValue
 			if targetTile.reward == "village":
 				bonus = bonus + player.villageValue
-		for x in range(5):
-			if isValidMove[x]:
-				results[x] = results[x] + bonus
-
+		results = [(results[x] + bonus) * isValidMove[x] for x in range(5)]
 		return results
 
 	def getResults_tile(self, player, deck, src = [], tiles = [], meeples = []):
@@ -332,7 +328,8 @@ class Board:
 		results = [self.resolveTile(player, deck, src, tile, meeples) + [tile[0], tile[1]] for tile in tiles]
 		for tile in results:
 			for x in range(5):
-				retval = retval + [[tile[x], Tile.meepleColorText[x], (tile[5], tile[6])]]
+				if tile[x] > 0:
+					retval = retval + [[tile[x], Tile.meepleColorText[x], (tile[5], tile[6])]]
 		#return sorted(retval, key= lambda tup: tup[0], reverse= True)
 		return retval
 
@@ -345,7 +342,6 @@ class Board:
 				for res in results:
 					res.insert(2, (scanx, scany))
 					retval = retval + [res]
-
 		return sorted(retval, key= lambda tup: tup[0], reverse= True)
 
 
