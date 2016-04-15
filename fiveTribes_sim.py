@@ -54,13 +54,13 @@ class Tile:
 				pygame.draw.circle(display, (20, 20, 20), [x + Tile.size/2,y+Tile.size/2], Tile.size * 1/2)
 
 
-		pygame.draw.circle(display, self.tileColor[self.color], [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
+		pygame.draw.circle(display, self.tileColor[self.color], [x + Tile.size * 17/20, y + Tile.size * 3/20], Tile.size / 10)
 		# draw tile value text
 		font = pygame.font.Font(None, Tile.size * 1/5)
 		text = font.render(str(self.value), 1, (10,10,10))
 		textpos = (
-			-text.get_rect().center[0] + x + Tile.size * 9/10, 
-			-text.get_rect().center[1] + y + Tile.size * 1/10)
+			-text.get_rect().center[0] + x + Tile.size * 17/20, 
+			-text.get_rect().center[1] + y + Tile.size * 3/20)
 		display.blit(text, textpos)
 
 		# owner (camel)
@@ -71,33 +71,36 @@ class Tile:
 		# reward
 		if self.reward == "palm":
 			sprite = pygame.transform.scale(Tile.sprites["palm"], (Tile.size / 4, Tile.size / 4))
-			display.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
+			display.blit(sprite, (x + Tile.size * 1/20, y + Tile.size * 14 / 20))
 		if self.reward == "village":
 			sprite = pygame.transform.scale(Tile.sprites["palace"], (Tile.size / 4, Tile.size / 4))
-			display.blit(sprite, (x + Tile.size / 12, y + Tile.size * 8 / 12))
+			display.blit(sprite, (x + Tile.size * 1/20, y + Tile.size * 14 / 20))
 
 		# meeples
-		cX = Tile.size * 1/8
-		cY = Tile.size * 1/4
+		cX = 0
+		cY = Tile.size * 7/20
 		for meep in range(5):
+			if self.meeples[meep] > 0:
+				cX = cX + Tile.size * 3/20
 			for stack in range(self.meeples[meep]):
 				#pygame.draw.circle(display, Tile.meepleColor[meep],   [x + cX, y + cY], Tile.size / 8)
 				sprite = pygame.transform.scale(Tile.sprites["meeple"][meep], (Tile.size / 4, Tile.size / 4))
 				display.blit(sprite, (x + cX - Tile.size / 8, y + cY - Tile.size / 8))
-				cX += Tile.size * 1/4
-				if cX >= Tile.size * 7/8:
-					cX = cX - Tile.size * 6/8
+				cX += Tile.size * 2/12
+				if cX >= Tile.size * 6/8:
+					cX = Tile.size * 1/8
 					cY += Tile.size * 1/4
 					if cY >= Tile.size:
-						cX = cX + Tile.size * 1/8
-						cY = Tile.size * 3/8
+						cY = Tile.size * 10/20
+			
 
 #==============================================================================
 
 
 class Player:
 	availablePlayers = \
-		[["orange" , (243,155, 99)],\
+		[["none"   , (200,200,200)],\
+		 ["orange" , (243,155, 99)],\
 		 ["blue"   , ( 53,191,204)],\
 		 ["black"  , (100,100,100)],\
 		 ["pink"   , (242,146,188)],]
@@ -202,7 +205,7 @@ class Board:
 				self.tiles[x][y].draw(display, highlight = highlight)
 
 	def clearTile(self, pos):
-		self.tiles[pos[0]][pos[1]] = Tile()
+		self.tiles[pos[0]][pos[1]] = Tile(pos)
 
 	def getTileChord(self, pos):
 		return (pos[0] / Tile.size, pos[1] / Tile.size)

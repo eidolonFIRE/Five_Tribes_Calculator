@@ -201,7 +201,7 @@ def resize(size = (1280, 720)):
 
 resultText = " {score:>2} {color:6} {sx:1},{sy:1} > {tx:1},{ty:1}"
 tileText = " {remaining:1}) {color:4} {value:>2} {reward:8}"
-cardText = "<{remaining:1}) {card:7}>"
+cardText = "<{remaining:1} {card:7}>"
 deckText = "X {text}"
 camelText = " {mark:1}) {text:9}"
 
@@ -233,34 +233,34 @@ for player in Player.availablePlayers:
 Tile.sprites["camel"] = camelSprites
 
 # solve mode
-myGui.objects["modeSolve"]       =   Button((  0,    0, 0.25, 0.05), (150,150,150), "Solve", mode_solve, ["all"])
-myGui.objects["solve_results"]   =     List((  0, 0.10,    1, 0.90), (250,250,250), solvedResults, selectResult, ["solve"])
-myGui.objects["solve_useSlaves"] = CheckBox((  0, 0.05,    1, 0.05), (100,100,100), "Use Slaves", False, setUseSlaves, ["solve"])
+myGui.objects["modeSolve"]       =   Button((  0,    0, 0.24, 0.045), (150,150,150), "Solve", mode_solve, ["all"])
+myGui.objects["solve_results"]   =     List((  0, 0.10,    1, 0.90 ), (250,250,250), solvedResults, selectResult, ["solve"])
+myGui.objects["solve_useSlaves"] = CheckBox((  0, 0.05,    1, 0.045), (100,100,100), "Use Slaves", False, setUseSlaves, ["solve"])
 
 # board mode
-myGui.objects["modeBoard"] =   Button((0.25,     0, 0.25,  0.05), (150,150,150), "Edit", mode_board, ["all"])
-myGui.objects["clearTile"] =   Button((   0,  0.05,  0.5,  0.05), (150,150,150), "Clear Tile", clearTile, ["board"])
-myGui.objects["tiles"]     =     List((   0,  0.35,    1,  0.50), (250,250,250), ["..."], selectTile, ["board"])
-myGui.objects["reds"]      = ValueBox((   0,  0.10,  0.5,  0.05), (255,100,100), (0,10), setReds, ["board"])
-myGui.objects["greens"]    = ValueBox((   0,  0.15,  0.5,  0.05), (100,255,100), (0,10), setGreens, ["board"])
-myGui.objects["blues"]     = ValueBox((   0,  0.20,  0.5,  0.05), (100,100,255), (0,10), setBlues, ["board"])
-myGui.objects["whites"]    = ValueBox((   0,  0.25,  0.5,  0.05), (255,255,255), (0,10), setWhites, ["board"])
-myGui.objects["yellows"]   = ValueBox((   0,  0.30,  0.5,  0.05), (255,242,  0), (0,10), setYellows, ["board"])
-myGui.objects["ownership"] =     List(( 0.5,  0.10,  0.5,  0.20), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectOwnership, ["board"])
+myGui.objects["modeBoard"] =   Button((0.25,     0, 0.24,  0.045), (150,150,150), "Edit", mode_board, ["all"])
+myGui.objects["clearTile"] =   Button((   0,  0.05,  0.5,  0.045), (150,150,150), "Clear Tile", clearTile, ["board"])
+myGui.objects["tiles"]     =     List((   0,  0.35,    1,  0.50 ), (250,250,250), ["..."], selectTile, ["board"])
+myGui.objects["reds"]      = ValueBox((   0,  0.10,  0.5,  0.045), (255,100,100), (0,10), setReds, ["board"])
+myGui.objects["greens"]    = ValueBox((   0,  0.15,  0.5,  0.045), (100,255,100), (0,10), setGreens, ["board"])
+myGui.objects["blues"]     = ValueBox((   0,  0.20,  0.5,  0.045), (100,100,255), (0,10), setBlues, ["board"])
+myGui.objects["whites"]    = ValueBox((   0,  0.25,  0.5,  0.045), (255,255,255), (0,10), setWhites, ["board"])
+myGui.objects["yellows"]   = ValueBox((   0,  0.30,  0.5,  0.045), (255,242,  0), (0,10), setYellows, ["board"])
+myGui.objects["ownership"] =     List(( 0.5,  0.10,  0.5,  0.25 ), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectOwnership, ["board"])
 
 # player mode
-myGui.objects["modeCards"]            =   Button((0.75, 0.00, 0.25, 0.05), (150,150,150), "Me", mode_cards, ["all"])
-myGui.objects["player_cards_select"]  =     List((   0, 0.25,  0.5, 0.20), (250,250,250), ["..."], player_cards_select, ["player"])
-myGui.objects["player_cards_value"]   =     List((   0, 0.20,  0.5, 0.05), (250,250,250), ["..."], None, ["player"])
-myGui.objects["player_slaves_slaves"] =   Button((   0, 0.10,  0.5, 0.05), (100,100,100), "Slave Cards", None, ["player"])
-myGui.objects["player_slaves"]        = ValueBox((   0, 0.15,  0.5, 0.05), (100,100,100), (0, 10), setSlaves, ["player"])
-myGui.objects["player_color"]         =     List(( 0.5, 0.20,  0.5, 0.20), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectPlayerColor, ["player"])
+myGui.objects["modeCards"]            =   Button((0.75, 0.00, 0.24, 0.045), (150,150,150), "Me", mode_cards, ["all"])
+myGui.objects["player_cards_select"]  =     List((   0, 0.25,  0.5, 0.35 ), (250,250,250), ["..."], player_cards_select, ["player"])
+myGui.objects["player_cards_value"]   =     List((   0, 0.20,  0.5, 0.045), (250,250,250), ["..."], None, ["player"])
+myGui.objects["player_slaves_slaves"] =   Button((   0, 0.10,  0.5, 0.045), (100,100,100), "Slave Cards", None, ["player"])
+myGui.objects["player_slaves"]        = ValueBox((   0, 0.15,  0.5, 0.045), (100,100,100), (0, 10), setSlaves, ["player"])
+myGui.objects["player_color"]         =     List(( 0.5, 0.20,  0.5, 0.20 ), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectPlayerColor, ["player"])
 
 
 # deck mode
-myGui.objects["modeDeck"]  = Button((0.5,   0, 0.25, 0.05), (150,150,150), "Deck", mode_deck, ["all"])
-myGui.objects["deckAdd"]   =   List((  0, 0.1,  0.5, 0.40), (250,250,250), ["..."], deckAdd, ["deck"])
-myGui.objects["deck"]      =   List((0.5, 0.1,  0.5, 0.40), (250,250,250), ["..."], deckPop, ["deck"])
+myGui.objects["modeDeck"]  = Button((0.5,   0, 0.24, 0.045), (150,150,150), "Deck", mode_deck, ["all"])
+myGui.objects["deckAdd"]   =   List((  0, 0.1,  0.5, 0.40 ), (250,250,250), ["..."], deckAdd, ["deck"])
+myGui.objects["deck"]      =   List((0.5, 0.1,  0.5, 0.40 ), (250,250,250), ["..."], deckPop, ["deck"])
 
 
 
