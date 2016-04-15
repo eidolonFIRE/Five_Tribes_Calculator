@@ -26,9 +26,10 @@ class Tile:
 	size = 100
 	sprites = {}
 
-	def __init__(self, setup = ('none',0,'none')):
+	def __init__(self, pos = (0,0), setup = ('none',0,'none')):
 		#               r,g,b,w,y
 		#self.meeples = [random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3),random.randrange(3)]
+		self.pos = pos
 		self.meeples = [0,0,0,0,0]
 		self.color = setup[0]
 		self.value = setup[1]                  # victory point worth of the tile
@@ -37,20 +38,22 @@ class Tile:
 		self.village = 0                       # accumulated village
 		self.camel = "none"                    # 'me', 'other'
 
-	def draw(self, display, x, y, option = "none"):
+	def draw(self, display, highlight):
+		x = self.pos[0] * Tile.size
+		y = self.pos[1] * Tile.size
+		self.rect = pygame.Rect(x, y, Tile.size, Tile.size).inflate(-Tile.size/30, -Tile.size/30)
 		# background
-		if option == "highlight_white":
-			pygame.draw.rect(display, (255, 255, 255), [x,y,Tile.size,Tile.size], 5)
-			pygame.draw.rect(display, (170, 170, 170), [x,y,Tile.size,Tile.size])
-		if option == "highlight_red":
-			pygame.draw.rect(display, (255, 0, 0), [x,y,Tile.size,Tile.size], 10)
-			pygame.draw.rect(display, (200, 140, 140), [x,y,Tile.size,Tile.size])
-		if option == "none":
+		if highlight != None:
+			pygame.draw.rect(display, highlight, self.rect, 5)
+			pygame.draw.rect(display, (170, 170, 170), self.rect)
+		else:
 			if self.value > 0:
-				pygame.draw.rect(display, (100, 100, 100), [x,y,Tile.size,Tile.size])
+				pygame.draw.rect(display, (100, 100, 100), self.rect)
 			else:
 				# for blank tile just draw grey circle
 				pygame.draw.circle(display, (20, 20, 20), [x + Tile.size/2,y+Tile.size/2], Tile.size * 1/2)
+
+
 		pygame.draw.circle(display, self.tileColor[self.color], [x + Tile.size * 9/10, y + Tile.size * 1/10], Tile.size / 10)
 		# draw tile value text
 		font = pygame.font.Font(None, Tile.size * 1/5)
@@ -173,7 +176,6 @@ class Deck:
 class Board:
 	width = 6
 	height = 5
-	tileSpacing = 10
 	availableTiles_histo = [
 		[5, 'blue',  5, 'village' ],
 		[4, 'blue',  6, 'djinn'   ],
@@ -188,26 +190,22 @@ class Board:
 	availablePalaces = 10
 
 	def __init__(self):
-		self.tiles = [[Tile() for j in range(Board.height)] for i in range(Board.width)]
+		self.tiles = [[Tile(pos = (i,j)) for j in range(Board.height)] for i in range(Board.width)]
 
-	def draw(self, display, highlights_white = [], highlights_red = []):
+	def draw(self, display, highlights = [[]]):
 		for x in range(Board.width):
 			for y in range(Board.height):
-				option = "none"
-				if (x, y) in highlights_white:
-					option = "highlight_white"
-				if (x, y) in highlights_red:
-					option = "highlight_red"
-				self.tiles[x][y].draw(display,
-					x = x * (Tile.size + Board.tileSpacing), 
-					y = y * (Tile.size + Board.tileSpacing),
-					option = option)
+				highlight = None
+				for entry in highlights:
+					if (x,y) == entry[0]:
+						highlight = entry[1]
+				self.tiles[x][y].draw(display, highlight = highlight)
 
 	def clearTile(self, pos):
 		self.tiles[pos[0]][pos[1]] = Tile()
 
 	def getTileChord(self, pos):
-		return (pos[0] / (Tile.size + self.tileSpacing), pos[1] / (Tile.size + self.tileSpacing))
+		return (pos[0] / Tile.size, pos[1] / Tile.size)
 
 	def clickTile(self, tileX, tileY):
 		retval = 0

@@ -53,7 +53,7 @@ def setSlaves(value = 0):
 def selectPlayerColor(index = 0, x = 0):
 	camel = Player.availablePlayers[index][0]
 	myPlayer.color = camel
-	myGui.objects["player_color"].text = [[("X) " if x[0] == camel else " ) ") + x[0], x[1]] for x in Player.availablePlayers]
+	myGui.objects["player_color"].text = [[(" X) " if x[0] == camel else "  ) ") + x[0], x[1]] for x in Player.availablePlayers]
 
 
 
@@ -76,17 +76,13 @@ def deckPop(index = 0, x = 0):
 
 
 def mode_board():
-	global highlights_white
-	global highlights_red
-	highlights_white = []
-	highlights_red = []
 	myGui.mode = "board"
 
 def selectOwnership(index = 0, x = 0):
 	global selectedTile
 	camel = Player.availablePlayers[index][0]
 	myBoard.tiles[selectedTile[0]][selectedTile[1]].camel = camel
-	myGui.objects["ownership"].text = [[("X) " if x[0] == camel else " ) ") + x[0], x[1]] for x in Player.availablePlayers]
+	myGui.objects["ownership"].text = [[(" X) " if x[0] == camel else "  ) ") + x[0], x[1]] for x in Player.availablePlayers]
 
 
 
@@ -107,17 +103,13 @@ def setUseSlaves(value = False):
 	myPlayer.useSlaves = value
 	mode_solve()
 
-def selectResult(x = 0):
+def selectResult(index = 0, x = 0):
 	global solvedResults
-	global highlights_white
-	global highlights_red
+	global highlights
 	global resultText
-	res = solvedResults[x]
-
-	highlights_white = [tuple(res[2])]
-	highlights_red = [tuple(res[3])]
-
-	print "selected: " + str(x)
+	res = solvedResults[index]
+	highlights = [[tuple(res[2]), (0,255,0)], [tuple(res[3]), (255,0,0)]]
+	print "selected: " + str(index)
 	print resultText.format(score=res[0], color=res[1], sx=res[2][0], sy=res[2][1], tx=res[3][0], ty=res[3][1])
 
 def selectTile(index = 0, x = 0):
@@ -151,7 +143,7 @@ def setSelectedTile(pos):
 	myGui.objects["whites" ].value = selTile.meeples[3]
 	myGui.objects["yellows"].value = selTile.meeples[4]
 	camel = myBoard.tiles[selectedTile[0]][selectedTile[1]].camel
-	myGui.objects["ownership"].text = [[("X) " if x[0] == camel else " ) ") + x[0], x[1]] for x in Player.availablePlayers]
+	myGui.objects["ownership"].text = [[(" X) " if x[0] == camel else "  ) ") + x[0], x[1]] for x in Player.availablePlayers]
 
 
 
@@ -196,6 +188,10 @@ def colorize(image, newColor):
 	image.set_colorkey((0,0,0))
 	return image
 
+def resize(size = (1280, 720)):
+	myDisplay = pygame.display.set_mode((size[0],size[1]) , pygame.RESIZABLE)
+	Tile.size = size[1] / Board.height
+	myGui.resize((Tile.size * Board.width + 10, 10,  size[0] - Tile.size * Board.width - 20, size[1] - 20))
 
 #==============================================================================
 #    Init
@@ -206,22 +202,22 @@ def colorize(image, newColor):
 resultText = " {score:>2} {color:6} {sx:1},{sy:1} > {tx:1},{ty:1}"
 tileText = " {remaining:1}) {color:4} {value:>2} {reward:8}"
 cardText = "<{remaining:1}) {card:7}>"
-deckText = " {text:9} X"
+deckText = "X {text}"
+camelText = " {mark:1}) {text:9}"
 
 pygame.init()
-myDisplay = pygame.display.set_mode((1000,700))
+myDisplay = pygame.display.set_mode((1280,720), pygame.RESIZABLE)
 pygame.display.set_caption('Five Tribes Calculator')
 simExit = False
 
-myGui = GUI(myDisplay)
+myGui = GUI(myDisplay, (Tile.size * Board.width, 0, 1280 - Tile.size * Board.width, 720))
 myGui.mode = "board"
 myBoard = Board()
 myPlayer = Player("Player1")
 myDeck = Deck()
 
 selectedTile = (0,0)
-highlights_white = []
-highlights_red = []
+highlights = []
 solvedResults = []
 
 # sprites
@@ -237,34 +233,34 @@ for player in Player.availablePlayers:
 Tile.sprites["camel"] = camelSprites
 
 # solve mode
-myGui.objects["modeSolve"]       =   Button(pygame.Rect(730,  10,  60,  25), (150,150,150), "Solve", 20, "rect", mode_solve, ["all"])
-myGui.objects["solve_results"]   =     List(pygame.Rect(660,  70, 250, 500), (250,250,250), solvedResults, 20, selectResult, ["solve"])
-myGui.objects["solve_useSlaves"] = CheckBox(pygame.Rect(660,  40, 160,  20), (100,100,100), False, "Use Slaves", 20, setUseSlaves, ["solve"])
+myGui.objects["modeSolve"]       =   Button((  0,    0, 0.25, 0.05), (150,150,150), "Solve", mode_solve, ["all"])
+myGui.objects["solve_results"]   =     List((  0, 0.10,    1, 0.90), (250,250,250), solvedResults, selectResult, ["solve"])
+myGui.objects["solve_useSlaves"] = CheckBox((  0, 0.05,    1, 0.05), (100,100,100), "Use Slaves", False, setUseSlaves, ["solve"])
 
 # board mode
-myGui.objects["modeBoard"] =   Button(pygame.Rect(660,  10,  60,  25), (150,150,150), "Edit", 20, "rect", mode_board, ["all"])
-myGui.objects["clearTile"] =   Button(pygame.Rect(660,  40, 100,  25), (150,150,150), "Clear Tile", 20, "rect", clearTile, ["board"])
-myGui.objects["tiles"]     =     List(pygame.Rect(660, 200, 250, 180), (250,250,250), ["..."], 20, selectTile, ["board"])
-myGui.objects["reds"]      = ValueBox(pygame.Rect(660,  70, 110,  20), (255,100,100), (0,10), 20, setReds, ["board"])
-myGui.objects["greens"]    = ValueBox(pygame.Rect(660,  95, 110,  20), (100,255,100), (0,10), 20, setGreens, ["board"])
-myGui.objects["blues"]     = ValueBox(pygame.Rect(660, 120, 110,  20), (100,100,255), (0,10), 20, setBlues, ["board"])
-myGui.objects["whites"]    = ValueBox(pygame.Rect(660, 145, 110,  20), (255,255,255), (0,10), 20, setWhites, ["board"])
-myGui.objects["yellows"]   = ValueBox(pygame.Rect(660, 170, 110,  20), (255,242,  0), (0,10), 20, setYellows, ["board"])
-myGui.objects["ownership"] =     List(pygame.Rect(780,  70, 130, 100), (100,100,100), [["-) "  + x[0], x[1]] for x in Player.availablePlayers], 20, selectOwnership, ["board"])
+myGui.objects["modeBoard"] =   Button((0.25,     0, 0.25,  0.05), (150,150,150), "Edit", mode_board, ["all"])
+myGui.objects["clearTile"] =   Button((   0,  0.05,  0.5,  0.05), (150,150,150), "Clear Tile", clearTile, ["board"])
+myGui.objects["tiles"]     =     List((   0,  0.35,    1,  0.50), (250,250,250), ["..."], selectTile, ["board"])
+myGui.objects["reds"]      = ValueBox((   0,  0.10,  0.5,  0.05), (255,100,100), (0,10), setReds, ["board"])
+myGui.objects["greens"]    = ValueBox((   0,  0.15,  0.5,  0.05), (100,255,100), (0,10), setGreens, ["board"])
+myGui.objects["blues"]     = ValueBox((   0,  0.20,  0.5,  0.05), (100,100,255), (0,10), setBlues, ["board"])
+myGui.objects["whites"]    = ValueBox((   0,  0.25,  0.5,  0.05), (255,255,255), (0,10), setWhites, ["board"])
+myGui.objects["yellows"]   = ValueBox((   0,  0.30,  0.5,  0.05), (255,242,  0), (0,10), setYellows, ["board"])
+myGui.objects["ownership"] =     List(( 0.5,  0.10,  0.5,  0.20), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectOwnership, ["board"])
 
 # player mode
-myGui.objects["modeCards"]            =   Button(pygame.Rect(800,  10,  60,  25), (150,150,150), "Cards", 20, "rect", mode_cards, ["all"])
-myGui.objects["player_cards_select"]  =     List(pygame.Rect(660, 250, 160, 200), (250,250,250), ["..."], 20, player_cards_select, ["player"])
-myGui.objects["player_cards_value"]   =     List(pygame.Rect(660, 220, 160,  40), (250,250,250), ["..."], 20, None, ["player"])
-myGui.objects["player_slaves_slaves"] =   Button(pygame.Rect(660, 160, 160,  20), (100,100,100), "Slave Cards", 20, "rect", None, ["player"])
-myGui.objects["player_slaves"]        = ValueBox(pygame.Rect(660, 180, 160,  20), (100,100,100), (0, 10), 20, setSlaves, ["player"])
-myGui.objects["player_color"]         =     List(pygame.Rect(660,  40, 130, 100), (100,100,100), [["-) "  + x[0], x[1]] for x in Player.availablePlayers], 20, selectPlayerColor, ["player"])
+myGui.objects["modeCards"]            =   Button((0.75, 0.00, 0.25, 0.05), (150,150,150), "Me", mode_cards, ["all"])
+myGui.objects["player_cards_select"]  =     List((   0, 0.25,  0.5, 0.20), (250,250,250), ["..."], player_cards_select, ["player"])
+myGui.objects["player_cards_value"]   =     List((   0, 0.20,  0.5, 0.05), (250,250,250), ["..."], None, ["player"])
+myGui.objects["player_slaves_slaves"] =   Button((   0, 0.10,  0.5, 0.05), (100,100,100), "Slave Cards", None, ["player"])
+myGui.objects["player_slaves"]        = ValueBox((   0, 0.15,  0.5, 0.05), (100,100,100), (0, 10), setSlaves, ["player"])
+myGui.objects["player_color"]         =     List(( 0.5, 0.20,  0.5, 0.20), (100,100,100), [[" -) "  + x[0], x[1]] for x in Player.availablePlayers], selectPlayerColor, ["player"])
 
 
 # deck mode
-myGui.objects["modeDeck"]  = Button(pygame.Rect(870,  10,  60,  25), (150,150,150), "Deck", 20, "rect", mode_deck, ["all"])
-myGui.objects["deckAdd"]   =   List(pygame.Rect(660, 100, 160, 200), (250,250,250), ["..."], 20, deckAdd, ["deck"])
-myGui.objects["deck"]      =   List(pygame.Rect(660, 310, 160, 200), (250,250,250), ["..."], 20, deckPop, ["deck"])
+myGui.objects["modeDeck"]  = Button((0.5,   0, 0.25, 0.05), (150,150,150), "Deck", mode_deck, ["all"])
+myGui.objects["deckAdd"]   =   List((  0, 0.1,  0.5, 0.40), (250,250,250), ["..."], deckAdd, ["deck"])
+myGui.objects["deck"]      =   List((0.5, 0.1,  0.5, 0.40), (250,250,250), ["..."], deckPop, ["deck"])
 
 
 
@@ -273,6 +269,8 @@ myGui.objects["deck"]      =   List(pygame.Rect(660, 310, 160, 200), (250,250,25
 #    Main loop
 #
 #------------------------------------------------------------------------------
+
+resize()
 
 while not simExit:
 	event = pygame.event.wait()
@@ -288,16 +286,22 @@ while not simExit:
 			setSelectedTile(pos)
 		myGui.mouseDown(pygame.mouse.get_pos())
 
-	if event.type != pygame.MOUSEMOTION:
+	if event.type == pygame.VIDEORESIZE:
+		resize((event.w, event.h))
 
-		highlights_red = [selectedTile]
+	if event.type != pygame.MOUSEMOTION:
+		
+
 		if myGui.mode == "board":
 			myGui.objects["tiles"].text = [[tileText.format(remaining=x[0], color=x[1], value=x[2], reward=x[3]), Tile.tileColor[x[1] if (x[0] > 0) else "none"]] for x in Board.availableTiles_histo]
+			highlights = [[selectedTile, (255,0,0)]]
 
 		myDisplay.fill((0,0,0))
-		myBoard.draw(myDisplay, highlights_white = highlights_white, highlights_red = highlights_red)
+		myBoard.draw(myDisplay, highlights)
 		myGui.draw()
 		pygame.display.update()
+
+
 
 pygame.quit()
 quit()
